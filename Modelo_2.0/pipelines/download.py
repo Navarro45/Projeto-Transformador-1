@@ -21,6 +21,7 @@ CLASSES = {
 }
 
 TOP_N = 3000
+METADATA_PATH = os.path.join(BASE_DIR, "data", "metadata.csv")
 
 
 # =========================
@@ -121,7 +122,7 @@ def process_class(cls_name, cls_sql):
 
     query = f"""
     SELECT TOP {TOP_N}
-        p.ra, p.dec, s.specObjID
+        p.ra, p.dec, s.specObjID, s.plate, s.mjd, s.fiberID
     FROM PhotoObj p
     JOIN SpecObj s ON p.objID = s.bestObjID
     WHERE s.class = '{cls_sql}'
@@ -132,11 +133,18 @@ def process_class(cls_name, cls_sql):
     print(f"Total retornado: {len(rows)}")
 
     success = 0
+    metadata_rows = []
 
     for i, row in enumerate(rows):
         ra = row["ra"]
         dec = row["dec"]
         specid = row["specObjID"]
+        plate = row.get("plate")
+        mjd = row.get("mjd")
+        fiber = row.get("fiberID")
+        obs_id = ""
+        if plate is not None and mjd is not None and fiber is not None:
+            obs_id = f"sdss_spectro_{int(plate)}-{int(mjd)}-{int(fiber):04d}"
 
         img_path = os.path.join(cls_path, f"{cls_name}_{i}.jpg")
         spec_path = os.path.join(cls_path, f"{cls_name}_{i}.npy")
@@ -160,6 +168,19 @@ def process_class(cls_name, cls_sql):
                     np.save(spec_path, spec)
 
             success += 1
+            metadata_rows.append({
+                "class_name": cls_name,
+                "base_name": f"{cls_name}_{i}",
+                "image_filename": f"{cls_name}_{i}.jpg",
+                "spec_filename": f"{cls_name}_{i}.npy",
+                "ra": ra,
+                "dec": dec,
+                "specobjid": specid,
+                "plate": plate,
+                "mjd": mjd,
+                "fiberid": fiber,
+                "obs_id": obs_id,
+            })
 
             if success % 100 == 0:
                 print(f"{success} objetos baixados")
@@ -171,6 +192,20 @@ def process_class(cls_name, cls_sql):
             print(f"[ERRO] {cls_name} {i}: {e}")
 
     print(f"✅ {cls_name}: {success} objetos processados")
+    return metadata_rows
+
+
+def write_metadata(rows):
+    os.makedirs(os.path.dirname(METADATA_PATH), exist_ok=True)
+    fields = [
+        "class_name", "base_name", "image_filename", "spec_filename",
+        "ra", "dec", "specobjid", "plate", "mjd", "fiberid", "obs_id"
+    ]
+    with open(METADATA_PATH, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=fields)
+        writer.writeheader()
+        for row in rows:
+            writer.writerow(row)
 
 
 # =========================
@@ -181,8 +216,13 @@ def run():
 
     create_dirs()
 
+    all_metadata = []
     for cls_name, (cls_sql, _) in CLASSES.items():
-        process_class(cls_name, cls_sql)
+        class_rows = process_class(cls_name, cls_sql)
+        all_metadata.extend(class_rows)
+
+    write_metadata(all_metadata)
+    print(f"🧾 Metadata salva em: {METADATA_PATH}")
 
     print("\n✅ Download finalizado!")
 

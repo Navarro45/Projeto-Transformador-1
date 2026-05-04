@@ -8,7 +8,6 @@ from torchvision import transforms
 from src.config import Config
 from src.dataset import AstroDataset
 from src.model import ImageModel
-from src.spectral_model import SpectralCNN
 from src.hierarchical_model import HierarchicalModel
 from src.train import train_model
 from src.evaluate import evaluate
@@ -50,7 +49,7 @@ def run_data_pipeline(force_download=False):
 # DATALOADERS
 # =========================
 def get_dataloaders(config):
-    transform = transforms.Compose([
+    train_transform = transforms.Compose([
         transforms.RandomResizedCrop(config.IMAGE_SIZE),
         transforms.RandomHorizontalFlip(),
         transforms.RandomRotation(20),
@@ -58,9 +57,15 @@ def get_dataloaders(config):
         transforms.ToTensor()
     ])
 
-    train_ds = AstroDataset(config.PATHS["train"], transform)
-    val_ds = AstroDataset(config.PATHS["val"], transform)
-    test_ds = AstroDataset(config.PATHS["test"], transform)
+    eval_transform = transforms.Compose([
+        transforms.Resize(config.IMAGE_SIZE + 32),
+        transforms.CenterCrop(config.IMAGE_SIZE),
+        transforms.ToTensor()
+    ])
+
+    train_ds = AstroDataset(config.PATHS["train"], train_transform, config=config)
+    val_ds = AstroDataset(config.PATHS["val"], eval_transform, config=config)
+    test_ds = AstroDataset(config.PATHS["test"], eval_transform, config=config)
 
     print(f"\n Dataset sizes:")
     print(f"Train: {len(train_ds)}")
@@ -103,22 +108,17 @@ def train_image_model(config, train_loader, val_loader):
 def train_spectral(config, train_loader, val_loader):
     print("\n Treinando modelo espectral (subclasses)...")
 
-    train_spectral_per_class(train_loader, val_loader, config)
+    spectral_models = train_spectral_per_class(train_loader, config)
 
     print(" Modelo espectral treinado")
+    return spectral_models
 
 
 # =========================
 # MODELO HIERÁRQUICO
 # =========================
-def build_hierarchical_model(image_model, config):
+def build_hierarchical_model(image_model, spectral_models):
     print("\n Montando modelo hierárquico...")
-
-    spectral_models = {
-        0: SpectralCNN(config.SPECTRAL_LENGTH, 7).to(config.DEVICE),
-        1: SpectralCNN(config.SPECTRAL_LENGTH, 3).to(config.DEVICE),
-        2: SpectralCNN(config.SPECTRAL_LENGTH, 2).to(config.DEVICE),
-    }
 
     model = HierarchicalModel(image_model, spectral_models)
 
@@ -152,6 +152,11 @@ def main():
 
     parser.add_argument("--download", action="store_true")
     parser.add_argument("--unsupervised", action="store_true")
+    parser.add_argument(
+        "--prepare-only",
+        action="store_true",
+        help="Pula download e executa apenas preprocess + split."
+    )
 
     args = parser.parse_args()
 
@@ -159,6 +164,14 @@ def main():
 
     config = Config()
     set_seed(config.SEED)
+
+    # 0️ Somente preparação de dados (sem download)
+    if args.prepare_only:
+        print("\n Executando apenas preprocess + split (sem download)...\n")
+        preprocess_pipeline()
+        split_pipeline()
+        print("\n PREPARAÇÃO DE DADOS FINALIZADA")
+        return
 
     # 1️ Download (opcional)
     if args.download:
@@ -182,10 +195,10 @@ def main():
     image_model = train_image_model(config, train_loader, val_loader)
 
     # 6️ Treino espectral (usa pseudo-label)
-    train_spectral(config, train_loader, val_loader)
+    spectral_models = train_spectral(config, train_loader, val_loader)
 
     # 7️ Modelo hierárquico
-    model = build_hierarchical_model(image_model, config)
+    model = build_hierarchical_model(image_model, spectral_models)
 
     # 8️ Avaliação
     evaluate_all(model, test_loader, config)

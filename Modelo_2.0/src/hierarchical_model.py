@@ -19,7 +19,7 @@ class HierarchicalModel(nn.Module):
             for i in range(len(main_pred)):
                 cls = main_pred[i].item()
 
-                if spectrum[i] is None:
+                if cls not in self.spectral_models:
                     subtype_logits.append(None)
                     continue
 
