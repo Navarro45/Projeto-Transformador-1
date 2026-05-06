@@ -18,13 +18,11 @@ def evaluate(model, dataloader, device, config):
     y_pred = []
 
     with torch.no_grad():
-        for images, spectrum, labels, _ in dataloader:
+        for images, labels in dataloader:
             images = images.to(device)
-            spectrum = spectrum.to(device)
 
-            outputs = model(images, spectrum)
-            main_logits = outputs[0] if isinstance(outputs, (tuple, list)) else outputs
-            preds = torch.argmax(main_logits, dim=1).cpu().numpy()
+            outputs = model(images)
+            preds = torch.argmax(outputs, dim=1).cpu().numpy()
 
             y_true.extend(labels.numpy())
             y_pred.extend(preds)
@@ -45,7 +43,7 @@ def evaluate(model, dataloader, device, config):
     )
 
     # ================= REPORT =================
-    report = save_classification_report(
+    save_classification_report(
         y_true,
         y_pred,
         CLASSES,

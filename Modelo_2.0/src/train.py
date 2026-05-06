@@ -28,7 +28,7 @@ def train_model(model, train_loader, val_loader, config):
         model.train()
         total_train = 0
 
-        for images, _, labels, _ in tqdm(train_loader):
+        for images, labels in tqdm(train_loader):
             images = images.to(config.DEVICE)
             labels = labels.to(config.DEVICE)
 
@@ -45,7 +45,7 @@ def train_model(model, train_loader, val_loader, config):
         total_val = 0
 
         with torch.no_grad():
-            for images, _, labels, _ in val_loader:
+            for images, labels in val_loader:
                 images = images.to(config.DEVICE)
                 labels = labels.to(config.DEVICE)
 

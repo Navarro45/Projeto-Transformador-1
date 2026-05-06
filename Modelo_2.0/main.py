@@ -8,7 +8,6 @@ from torchvision import transforms
 from src.config import Config
 from src.dataset import AstroDataset
 from src.model import ImageModel
-from src.hierarchical_model import HierarchicalModel
 from src.train import train_model
 from src.evaluate import evaluate
 from src.utils import set_seed, ensure_dir
@@ -16,9 +15,6 @@ from src.utils import set_seed, ensure_dir
 from pipelines.download import run as download_pipeline
 from pipelines.preprocess import run as preprocess_pipeline
 from pipelines.split import run as split_pipeline
-from pipelines.unsupervised import run as unsupervised_pipeline
-
-from src.train_spectral import train_spectral_per_class
 
 
 # =========================
@@ -63,9 +59,9 @@ def get_dataloaders(config):
         transforms.ToTensor()
     ])
 
-    train_ds = AstroDataset(config.PATHS["train"], train_transform, config=config)
-    val_ds = AstroDataset(config.PATHS["val"], eval_transform, config=config)
-    test_ds = AstroDataset(config.PATHS["test"], eval_transform, config=config)
+    train_ds = AstroDataset(config.PATHS["train"], train_transform)
+    val_ds = AstroDataset(config.PATHS["val"], eval_transform)
+    test_ds = AstroDataset(config.PATHS["test"], eval_transform)
 
     print(f"\n Dataset sizes:")
     print(f"Train: {len(train_ds)}")
@@ -103,29 +99,6 @@ def train_image_model(config, train_loader, val_loader):
 
 
 # =========================
-# TREINO ESPECTRAL
-# =========================
-def train_spectral(config, train_loader, val_loader):
-    print("\n Treinando modelo espectral (subclasses)...")
-
-    spectral_models = train_spectral_per_class(train_loader, config)
-
-    print(" Modelo espectral treinado")
-    return spectral_models
-
-
-# =========================
-# MODELO HIERÁRQUICO
-# =========================
-def build_hierarchical_model(image_model, spectral_models):
-    print("\n Montando modelo hierárquico...")
-
-    model = HierarchicalModel(image_model, spectral_models)
-
-    return model
-
-
-# =========================
 # AVALIAÇÃO
 # =========================
 def evaluate_all(model, test_loader, config):
@@ -151,7 +124,6 @@ def main():
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--download", action="store_true")
-    parser.add_argument("--unsupervised", action="store_true")
     parser.add_argument(
         "--prepare-only",
         action="store_true",
@@ -180,27 +152,17 @@ def main():
         download_pipeline()
         preprocess_pipeline()
         split_pipeline()
-        
+
     # 2️ Pipeline padrão
     run_data_pipeline()
 
-    # 3️ Subclasses (MUITO IMPORTANTE)
-    if args.unsupervised:
-        unsupervised_pipeline()
-
-    # 4️ Dataloaders
+    # 3️ Dataloaders
     train_loader, val_loader, test_loader = get_dataloaders(config)
 
-    # 5️ Treino imagem
-    image_model = train_image_model(config, train_loader, val_loader)
+    # 4️ Treino imagem
+    model = train_image_model(config, train_loader, val_loader)
 
-    # 6️ Treino espectral (usa pseudo-label)
-    spectral_models = train_spectral(config, train_loader, val_loader)
-
-    # 7️ Modelo hierárquico
-    model = build_hierarchical_model(image_model, spectral_models)
-
-    # 8️ Avaliação
+    # 5️ Avaliação
     evaluate_all(model, test_loader, config)
 
     print("\n PIPELINE FINALIZADO")

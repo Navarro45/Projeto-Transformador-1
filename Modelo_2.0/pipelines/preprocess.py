@@ -1,7 +1,6 @@
 import os
 import shutil
 import random
-import numpy as np
 from PIL import Image
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -30,33 +29,6 @@ def is_valid_image(path):
 
 
 # =========================
-# VALIDAR ESPECTRO
-# =========================
-def is_valid_spectrum(path):
-    if not os.path.exists(path):
-        return False
-    try:
-        data = np.load(path)
-        return len(data) > 10
-    except:
-        return False
-
-
-# =========================
-# NORMALIZAR ESPECTRO
-# =========================
-def normalize_spectrum(spec, target_len=1024):
-    spec = (spec - np.mean(spec)) / (np.std(spec) + 1e-8)
-
-    if len(spec) < target_len:
-        spec = np.pad(spec, (0, target_len - len(spec)))
-    else:
-        spec = spec[:target_len]
-
-    return spec
-
-
-# =========================
 # CRIAR ESTRUTURA
 # =========================
 def create_structure():
@@ -78,18 +50,10 @@ def process_class(cls):
 
     for f in files:
         img_path = os.path.join(class_path, f)
-        base = f.replace(".jpg", "")
-        spec_path = os.path.join(class_path, base + ".npy")
 
         if not is_valid_image(img_path):
             os.remove(img_path)
             continue
-
-        # espectro pode não existir (fallback)
-        if is_valid_spectrum(spec_path):
-            spec = np.load(spec_path)
-            spec = normalize_spectrum(spec)
-            np.save(spec_path, spec)
 
         valid_samples.append(f)
 
@@ -109,19 +73,10 @@ def process_class(cls):
 
     for split, files in splits.items():
         for f in files:
-            base = f.replace(".jpg", "")
-
             src_img = os.path.join(class_path, f)
             dst_img = os.path.join(OUTPUT_DIR, split, cls, f)
 
             shutil.copy2(src_img, dst_img)
-
-            # copiar espectro se existir
-            src_spec = os.path.join(class_path, base + ".npy")
-            dst_spec = os.path.join(OUTPUT_DIR, split, cls, base + ".npy")
-
-            if os.path.exists(src_spec):
-                shutil.copy2(src_spec, dst_spec)
 
     print(f"{cls} OK")
 

@@ -22,8 +22,6 @@ class GradCAM:
 
     def __call__(self, x, class_idx=None):
         logits = self.model(x)
-        if isinstance(logits, (tuple, list)):
-            logits = logits[0]
 
         if class_idx is None:
             class_idx = torch.argmax(logits, dim=1)
@@ -53,20 +51,19 @@ def save_gradcam_samples(model, dataloader, config, class_names):
     device = config.DEVICE
     max_images = getattr(config, "HEATMAP_MAX_IMAGES", 24)
 
-    image_model = model.image_model if hasattr(model, "image_model") else model
-    target_layer = image_model.model.layer4[-1]
-    gradcam = GradCAM(image_model, target_layer)
+    target_layer = model.model.layer4[-1]
+    gradcam = GradCAM(model, target_layer)
 
-    image_model.eval()
+    model.eval()
     saved = 0
 
     with torch.enable_grad():
-        for images, _, labels, _ in dataloader:
+        for images, labels in dataloader:
             images = images.to(device)
             labels = labels.to(device)
 
             cams = gradcam(images)
-            logits = image_model(images)
+            logits = model(images)
             preds = torch.argmax(logits, dim=1)
 
             for i in range(images.size(0)):

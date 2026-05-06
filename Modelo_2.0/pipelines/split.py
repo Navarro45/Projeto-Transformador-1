@@ -42,16 +42,10 @@ def run():
             os.makedirs(os.path.join(DST, split, cls), exist_ok=True)
 
             for f in splits[split]:
-                base = f.replace(".jpg", "")
-
                 src_img = os.path.join(path, f)
                 dst_img = os.path.join(DST, split, cls, f)
 
                 shutil.copy(src_img, dst_img)
-
-                spec = os.path.join(path, base + ".npy")
-                if os.path.exists(spec):
-                    shutil.copy(spec, os.path.join(DST, split, cls, base + ".npy"))
 
     print("✅ Split finalizado")
 

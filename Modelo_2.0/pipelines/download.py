@@ -2,7 +2,6 @@ import os
 import csv
 import time
 import requests
-import numpy as np
 
 # =========================
 # CONFIG
@@ -83,36 +82,6 @@ def download_image(ra, dec, retries=3):
 
 
 # =========================
-# DOWNLOAD ESPECTRO (ROBUSTO)
-# =========================
-def download_spectrum(specid, retries=3):
-    url = f"https://skyserver.sdss.org/{DR}/SkyServerWS/Spectro/SpecById?specObjID={specid}"
-
-    for attempt in range(retries):
-        try:
-            resp = requests.get(url, timeout=10)
-
-            if resp.status_code != 200:
-                continue
-
-            data = resp.json()
-
-            if len(data["Rows"]) == 0:
-                return None
-
-            flux = data["Rows"][0]["flux"]
-
-            return np.array(flux, dtype=np.float32)
-
-        except Exception:
-            print(f"[SPEC] tentativa {attempt+1} falhou")
-
-        time.sleep(1)
-
-    return None
-
-
-# =========================
 # PROCESSAR CLASSE
 # =========================
 def process_class(cls_name, cls_sql):
@@ -122,7 +91,7 @@ def process_class(cls_name, cls_sql):
 
     query = f"""
     SELECT TOP {TOP_N}
-        p.ra, p.dec, s.specObjID, s.plate, s.mjd, s.fiberID
+        p.ra, p.dec
     FROM PhotoObj p
     JOIN SpecObj s ON p.objID = s.bestObjID
     WHERE s.class = '{cls_sql}'
@@ -138,19 +107,10 @@ def process_class(cls_name, cls_sql):
     for i, row in enumerate(rows):
         ra = row["ra"]
         dec = row["dec"]
-        specid = row["specObjID"]
-        plate = row.get("plate")
-        mjd = row.get("mjd")
-        fiber = row.get("fiberID")
-        obs_id = ""
-        if plate is not None and mjd is not None and fiber is not None:
-            obs_id = f"sdss_spectro_{int(plate)}-{int(mjd)}-{int(fiber):04d}"
 
         img_path = os.path.join(cls_path, f"{cls_name}_{i}.jpg")
-        spec_path = os.path.join(cls_path, f"{cls_name}_{i}.npy")
 
         try:
-            # -------- IMAGEM --------
             if not os.path.exists(img_path):
                 img = download_image(ra, dec)
 
@@ -160,32 +120,18 @@ def process_class(cls_name, cls_sql):
                 with open(img_path, "wb") as f:
                     f.write(img)
 
-            # -------- ESPECTRO --------
-            if not os.path.exists(spec_path):
-                spec = download_spectrum(specid)
-
-                if spec is not None:
-                    np.save(spec_path, spec)
-
             success += 1
             metadata_rows.append({
                 "class_name": cls_name,
                 "base_name": f"{cls_name}_{i}",
                 "image_filename": f"{cls_name}_{i}.jpg",
-                "spec_filename": f"{cls_name}_{i}.npy",
                 "ra": ra,
                 "dec": dec,
-                "specobjid": specid,
-                "plate": plate,
-                "mjd": mjd,
-                "fiberid": fiber,
-                "obs_id": obs_id,
             })
 
             if success % 100 == 0:
                 print(f"{success} objetos baixados")
 
-            # 🔥 evita bloqueio do SDSS
             time.sleep(0.2)
 
         except Exception as e:
@@ -197,10 +143,7 @@ def process_class(cls_name, cls_sql):
 
 def write_metadata(rows):
     os.makedirs(os.path.dirname(METADATA_PATH), exist_ok=True)
-    fields = [
-        "class_name", "base_name", "image_filename", "spec_filename",
-        "ra", "dec", "specobjid", "plate", "mjd", "fiberid", "obs_id"
-    ]
+    fields = ["class_name", "base_name", "image_filename", "ra", "dec"]
     with open(METADATA_PATH, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fields)
         writer.writeheader()
