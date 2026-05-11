@@ -1,0 +1,33 @@
+galaxy:
+  precision: 0.7001
+  recall: 0.6355
+  f1-score: 0.6662
+  support: 812.0000
+
+quasar:
+  precision: 0.5265
+  recall: 0.7952
+  f1-score: 0.6335
+  support: 713.0000
+
+star:
+  precision: 0.7870
+  recall: 0.5127
+  f1-score: 0.6209
+  support: 829.0000
+
+accuracy:
+  0.6406117247238743
+
+macro avg:
+  precision: 0.6712
+  recall: 0.6478
+  f1-score: 0.6402
+  support: 2354.0000
+
+weighted avg:
+  precision: 0.6781
+  recall: 0.6406
+  f1-score: 0.6404
+  support: 2354.0000
+
