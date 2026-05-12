@@ -1,0 +1,438 @@
+import os
+import cv2
+import torch
+import numpy as np
+import matplotlib.pyplot as plt
+
+from PIL import Image
+
+from torchvision import datasets, transforms, models
+from torch.utils.data import DataLoader
+
+from sklearn.metrics import (
+    confusion_matrix,
+    classification_report,
+    ConfusionMatrixDisplay
+)
+
+from pytorch_grad_cam import GradCAM
+from pytorch_grad_cam.utils.image import show_cam_on_image
+from pytorch_grad_cam.utils.model_targets import ClassifierOutputTarget
+
+
+class EfficientNetClassifier:
+
+    def __init__(
+        self,
+        train_dir,
+        test_dir,
+        output_dir="output",
+        img_size=224,
+        batch_size=32,
+        epochs=5,
+        learning_rate=0.001
+    ):
+
+        self.train_dir = train_dir
+        self.test_dir = test_dir
+        self.output_dir = output_dir
+
+        self.img_size = img_size
+        self.batch_size = batch_size
+        self.epochs = epochs
+        self.learning_rate = learning_rate
+
+        self.device = torch.device(
+            "cuda" if torch.cuda.is_available() else "cpu"
+        )
+
+        os.makedirs(self.output_dir, exist_ok=True)
+
+        self.transform = transforms.Compose([
+            transforms.Resize((self.img_size, self.img_size)),
+            transforms.ToTensor(),
+        ])
+
+        self._load_data()
+        self._build_model()
+
+    # ==================================================
+    # DATA
+    # ==================================================
+
+    def _load_data(self):
+
+        self.train_dataset = datasets.ImageFolder(
+            self.train_dir,
+            transform=self.transform
+        )
+
+        self.test_dataset = datasets.ImageFolder(
+            self.test_dir,
+            transform=self.transform
+        )
+
+        self.train_loader = DataLoader(
+            self.train_dataset,
+            batch_size=self.batch_size,
+            shuffle=True
+        )
+
+        self.test_loader = DataLoader(
+            self.test_dataset,
+            batch_size=self.batch_size,
+            shuffle=False
+        )
+
+        self.class_names = self.train_dataset.classes
+        self.num_classes = len(self.class_names)
+
+    # ==================================================
+    # MODEL
+    # ==================================================
+
+    def _build_model(self):
+
+        self.model = models.efficientnet_b0(weights="DEFAULT")
+
+        self.model.classifier[1] = torch.nn.Linear(
+            self.model.classifier[1].in_features,
+            self.num_classes
+        )
+
+        self.model = self.model.to(self.device)
+
+        self.criterion = torch.nn.CrossEntropyLoss()
+
+        self.optimizer = torch.optim.Adam(
+            self.model.parameters(),
+            lr=self.learning_rate
+        )
+
+    # ==================================================
+    # TRAIN
+    # ==================================================
+
+    def train(self):
+
+        self.train_losses = []
+        self.train_accuracies = []
+
+        for epoch in range(self.epochs):
+
+            self.model.train()
+
+            running_loss = 0
+            correct = 0
+            total = 0
+
+            for images, labels in self.train_loader:
+
+                images = images.to(self.device)
+                labels = labels.to(self.device)
+
+                self.optimizer.zero_grad()
+
+                outputs = self.model(images)
+
+                loss = self.criterion(outputs, labels)
+
+                loss.backward()
+
+                self.optimizer.step()
+
+                running_loss += loss.item()
+
+                _, predicted = torch.max(outputs, 1)
+
+                total += labels.size(0)
+                correct += (predicted == labels).sum().item()
+
+            epoch_loss = running_loss / len(self.train_loader)
+            epoch_acc = correct / total
+
+            self.train_losses.append(epoch_loss)
+            self.train_accuracies.append(epoch_acc)
+
+            print(f"Epoch {epoch+1}/{self.epochs}")
+            print(f"Loss: {epoch_loss:.4f}")
+            print(f"Accuracy: {epoch_acc:.4f}")
+
+    # ==================================================
+    # EVALUATE
+    # ==================================================
+
+    def evaluate(self):
+
+        self.model.eval()
+
+        self.y_true = []
+        self.y_pred = []
+
+        with torch.no_grad():
+
+            for images, labels in self.test_loader:
+
+                images = images.to(self.device)
+
+                outputs = self.model(images)
+
+                _, predicted = torch.max(outputs, 1)
+
+                self.y_true.extend(labels.numpy())
+                self.y_pred.extend(predicted.cpu().numpy())
+
+        print("Evaluation complete")
+
+    # ==================================================
+    # SAVE METRICS
+    # ==================================================
+
+    def save_metrics(self):
+
+        plt.figure(figsize=(8, 5))
+
+        plt.plot(self.train_accuracies)
+
+        plt.xlabel("Epoch")
+        plt.ylabel("Accuracy")
+        plt.title("Accuracy durante treinamento")
+
+        plt.savefig(
+            os.path.join(self.output_dir, "accuracy_curve.png")
+        )
+
+        plt.close()
+
+        plt.figure(figsize=(8, 5))
+
+        plt.plot(self.train_losses)
+
+        plt.xlabel("Epoch")
+        plt.ylabel("Loss")
+        plt.title("Loss durante treinamento")
+
+        plt.savefig(
+            os.path.join(self.output_dir, "loss_curve.png")
+        )
+
+        plt.close()
+
+        print("Metrics saved")
+
+
+    # ==================================================
+    # SAVE TRAINING DATA
+    # ==================================================
+
+    def save_training_data(self):
+
+        train_data = {
+            "train_losses": self.train_losses,
+            "train_accuracies": self.train_accuracies,
+            "y_true": self.y_true,
+            "y_pred": self.y_pred,
+            "class_names": self.class_names
+        }
+
+        torch.save(
+            train_data,
+            os.path.join(
+                self.output_dir,
+                "training_data.pth"
+            )
+        )
+
+        print("Training data saved")
+
+    # ==================================================
+    # LOAD TRAINING DATA
+    # ==================================================
+
+    def load_training_data(self):
+
+        data = torch.load(
+            os.path.join(
+                self.output_dir,
+                "training_data.pth"
+            ),
+            map_location=self.device
+        )
+
+        self.train_losses = data["train_losses"]
+        self.train_accuracies = data["train_accuracies"]
+        self.y_true = data["y_true"]
+        self.y_pred = data["y_pred"]
+        self.class_names = data["class_names"]
+
+        print("Training data loaded")
+
+
+    # ==================================================
+    # TEST EVALUATION SUMMARY
+    # ==================================================
+
+    def evaluate_test_results(self):
+
+        report_dict = classification_report(
+            self.y_true,
+            self.y_pred,
+            target_names=self.class_names,
+            output_dict=True
+        )
+        output_file = os.path.join(
+            self.output_dir,
+            "test_evaluation_summary.txt"
+        )
+        with open(output_file, "w") as f:
+
+            f.write("=== TEST DATA EVALUATION ===")
+
+            accuracy = report_dict["accuracy"]
+            macro_avg = report_dict["macro avg"]
+            weighted_avg = report_dict["weighted avg"]
+
+            f.write(f"Overall Accuracy: {accuracy:.4f}")
+            f.write("=== MACRO AVERAGE ===")
+            f.write(
+                f"Precision: {macro_avg['precision']:.4f}")
+            f.write(
+                f"Recall: {macro_avg['recall']:.4f}")
+            f.write(
+                f"F1-Score: {macro_avg['f1-score']:.4f}")
+
+            f.write("=== WEIGHTED AVERAGE ===")
+            f.write(
+                f"Precision: {weighted_avg['precision']:.4f}")
+            f.write(
+                f"Recall: {weighted_avg['recall']:.4f}")
+            f.write(
+                f"F1-Score: {weighted_avg['f1-score']:.4f}")
+            f.write("=== PER CLASS RESULTS ===")
+
+            for class_name in self.class_names:
+
+                metrics = report_dict[class_name]
+
+                f.write(f"Class: {class_name}")
+                f.write(
+                    f"  Precision: {metrics['precision']:.4f}")
+                f.write(
+                    f"  Recall: {metrics['recall']:.4f}")
+                f.write(
+                    f"  F1-Score: {metrics['f1-score']:.4f}")
+                f.write(
+                    f"  Support: {metrics['support']}")
+        print(f"Test evaluation saved in: {output_file}")
+
+    # ==================================================
+    # SAVE MODEL
+    # ==================================================
+
+    def save_model(self):
+
+        torch.save(
+            self.model.state_dict(),
+            os.path.join(
+                self.output_dir,
+                "efficientnet_model.pth"
+            )
+        )
+
+        print("Model saved")
+
+    # ==================================================
+    # LOAD MODEL
+    # ==================================================
+
+    def load_model(self, model_path):
+
+        self.model.load_state_dict(
+            torch.load(model_path, map_location=self.device)
+        )
+
+        self.model.eval()
+
+        print("Model loaded")
+
+    # ==================================================
+    # PREDICT SINGLE IMAGE
+    # ==================================================
+
+    def predict_image(self, image_path):
+
+        image = Image.open(image_path).convert("RGB")
+
+        tensor = self.transform(image).unsqueeze(0).to(self.device)
+
+        self.model.eval()
+
+        with torch.no_grad():
+
+            output = self.model(tensor)
+
+            predicted = output.argmax(dim=1).item()
+
+        predicted_class = self.class_names[predicted]
+
+        print(f"Prediction: {predicted_class}")
+
+        return predicted_class
+
+    # ==================================================
+    # GRADCAM
+    # ==================================================
+
+    def generate_gradcam(self, image_path):
+
+        image = Image.open(image_path).convert("RGB")
+
+        tensor = self.transform(image).unsqueeze(0).to(self.device)
+
+        target_layers = [self.model.features[-1]]
+
+        cam = GradCAM(
+            model=self.model,
+            target_layers=target_layers
+        )
+
+        self.model.eval()
+
+        with torch.no_grad():
+
+            output = self.model(tensor)
+            predicted_class = output.argmax(dim=1).item()
+
+        targets = [ClassifierOutputTarget(predicted_class)]
+
+        grayscale_cam = cam(
+            input_tensor=tensor,
+            targets=targets
+        )
+
+        grayscale_cam = grayscale_cam[0]
+
+        rgb_img = np.array(
+            image.resize((self.img_size, self.img_size))
+        ) / 255.0
+
+        visualization = show_cam_on_image(
+            rgb_img,
+            grayscale_cam,
+            use_rgb=True
+        )
+
+        output_path = os.path.join(
+            self.output_dir,
+            "gradcam_result.png"
+        )
+
+        cv2.imwrite(
+            output_path,
+            cv2.cvtColor(
+                visualization,
+                cv2.COLOR_RGB2BGR
+            )
+        )
+
+        print(f"GradCAM salvo em: {output_path}")
