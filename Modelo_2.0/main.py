@@ -45,17 +45,22 @@ def run_data_pipeline(force_download=False):
 # DATALOADERS
 # =========================
 def get_dataloaders(config):
+    center_crop_size = int(config.IMAGE_SIZE * config.CENTER_CROP_RATIO)
+
     train_transform = transforms.Compose([
-        transforms.RandomResizedCrop(config.IMAGE_SIZE),
+        transforms.Resize(config.IMAGE_SIZE),
+        transforms.CenterCrop(center_crop_size),
+        transforms.Resize(config.IMAGE_SIZE),
         transforms.RandomHorizontalFlip(),
-        transforms.RandomRotation(20),
+        transforms.RandomRotation(12),
         transforms.ColorJitter(brightness=0.2, contrast=0.2),
         transforms.ToTensor()
     ])
 
     eval_transform = transforms.Compose([
-        transforms.Resize(config.IMAGE_SIZE + 32),
-        transforms.CenterCrop(config.IMAGE_SIZE),
+        transforms.Resize(config.IMAGE_SIZE),
+        transforms.CenterCrop(center_crop_size),
+        transforms.Resize(config.IMAGE_SIZE),
         transforms.ToTensor()
     ])
 
@@ -84,7 +89,11 @@ def get_dataloaders(config):
 def train_image_model(config, train_loader, val_loader):
     print("\n🏋️ Treinando modelo de imagem...")
 
-    model = ImageModel(config.NUM_CLASSES)
+    model = ImageModel(
+        config.NUM_CLASSES,
+        center_focus_sigma=config.CENTER_FOCUS_SIGMA,
+        center_focus_strength=config.CENTER_FOCUS_STRENGTH
+    )
 
     train_model(model, train_loader, val_loader, config)
 

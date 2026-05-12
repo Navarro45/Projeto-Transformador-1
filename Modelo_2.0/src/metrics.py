@@ -20,22 +20,26 @@ def compute_metrics(y_true, y_pred):
 
 
 def plot_confusion_matrix(y_true, y_pred, classes, save_path):
-    cm = confusion_matrix(y_true, y_pred)
+    # Normalização por linha: proporções em cada classe verdadeira
+    cm = confusion_matrix(y_true, y_pred, normalize="true")
 
     plt.figure()
-    plt.imshow(cm)
-    plt.title("Confusion Matrix")
-    plt.colorbar()
+    plt.imshow(cm, vmin=0.0, vmax=1.0, cmap="Blues")
+    plt.title("Matriz de confusão (normalizada por classe verdadeira)")
+    plt.colorbar(label="Proporção")
 
     plt.xticks(np.arange(len(classes)), classes, rotation=45)
     plt.yticks(np.arange(len(classes)), classes)
 
     for i in range(len(classes)):
         for j in range(len(classes)):
-            plt.text(j, i, cm[i, j], ha="center", va="center")
+            val = cm[i, j]
+            pct = "" if np.isnan(val) else f"{100.0 * val:.1f}%"
+            txt_color = "white" if np.isfinite(val) and val > 0.45 else "black"
+            plt.text(j, i, pct, ha="center", va="center", color=txt_color)
 
-    plt.xlabel("Predicted")
-    plt.ylabel("True")
+    plt.xlabel("Predito")
+    plt.ylabel("Verdadeiro")
 
     plt.tight_layout()
     plt.savefig(save_path)

@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import torch
+import torch.nn.functional as F
 import matplotlib.pyplot as plt
 
 
@@ -46,6 +47,13 @@ def _to_numpy_image(tensor_img):
     return img
 
 
+def _upsample_cam_to_image(cam_2d, height, width):
+    """Alinha espacialmente o CAM à imagem (ex.: 7×7 → 224×224)."""
+    t = torch.as_tensor(cam_2d, dtype=torch.float32).unsqueeze(0).unsqueeze(0)
+    t = F.interpolate(t, size=(height, width), mode="bicubic", align_corners=False)
+    return t.squeeze().numpy().astype(np.float32)
+
+
 def save_gradcam_samples(model, dataloader, config, class_names):
     os.makedirs(config.PATHS["heatmaps"], exist_ok=True)
     device = config.DEVICE
@@ -71,11 +79,13 @@ def save_gradcam_samples(model, dataloader, config, class_names):
                     return
 
                 img = _to_numpy_image(images[i])
-                cam = cams[i, 0].detach().cpu().numpy()
+                h, w = img.shape[0], img.shape[1]
+                cam_small = cams[i, 0].detach().cpu().numpy()
+                cam = _upsample_cam_to_image(cam_small, h, w)
 
                 fig, ax = plt.subplots(figsize=(5, 5))
-                ax.imshow(img)
-                ax.imshow(cam, cmap="jet", alpha=0.45)
+                ax.imshow(img, aspect="equal", interpolation="bilinear")
+                ax.imshow(cam, cmap="jet", alpha=0.5, vmin=0.0, vmax=1.0, interpolation="bicubic")
                 ax.axis("off")
 
                 true_label = class_names[labels[i].item()]
