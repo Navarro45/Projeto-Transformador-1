@@ -1,0 +1,26 @@
+=== TEST DATA EVALUATION ===
+Overall Accuracy: 0.8946
+=== MACRO AVERAGE ===
+Precision: 0.8927
+Recall: 0.8924
+F1-Score: 0.8919
+=== WEIGHTED AVERAGE ===
+Precision: 0.8938
+Recall: 0.8946
+F1-Score: 0.8936
+=== PER CLASS RESULTS ===
+Class: galaxy
+  Precision: 0.9163
+  Recall: 0.9840
+  F1-Score: 0.9489
+  Support: 812.0
+Class: quasar
+  Precision: 0.8672
+  Recall: 0.8331
+  F1-Score: 0.8498
+  Support: 713.0
+Class: star
+  Precision: 0.8946
+  Recall: 0.8601
+  F1-Score: 0.8770
+  Support: 829.0

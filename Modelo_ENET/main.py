@@ -17,7 +17,14 @@ classifier.evaluate()
 # salvar métricas
 classifier.save_metrics()
 
+# avaliação detalhada dos testes
+classifier.evaluate_test_results()
+
 # salvar modelo
+classifier.save_model()
+
+# salvar dados do treino
+classifier.save_training_data()
 
 # predição individual
 classifier.predict_image(
