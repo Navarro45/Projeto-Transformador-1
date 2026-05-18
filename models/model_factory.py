@@ -1,8 +1,7 @@
-from efficientnet_modelo import EfficientNetModel
-from resnet_modelo import ResNetModel
-from convNeXt_modelo import ConvNeXtModel
-from vit_modelo import ViTModel
-from visionMamba_modelo import MambaVisionModel
+from .efficientnet_modelo import EfficientNetModel
+from .resnet_modelo import ResNetModel
+from .convNeXt_modelo import ConvNeXtModel
+from .vit_modelo import ViTModel
 
 class ModelFactory:
 
@@ -12,7 +11,6 @@ class ModelFactory:
         "resnet": ResNetModel,
         "convnext": ConvNeXtModel,
         "vit": ViTModel,
-        "mamba": MambaVisionModel
     }
 
     @staticmethod

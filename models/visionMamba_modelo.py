@@ -1,36 +1,49 @@
 import torch.nn as nn
-from modelo_base import Modelo_Base
-from mambavision import MambaVision
+from mambavision import create_model
+from .modelo_base import BaseVisionModel
 
 
-class MambaVisionModel(Modelo_Base):
+class MambaVisionModel(BaseVisionModel):
 
     def __init__(
         self,
         num_classes,
-        device
+        device,
+        variant="mamba_vision_T"
     ):
 
         super().__init__(
             num_classes,
             device,
-            model_name="mamba_vision"
+            model_name=variant
         )
+
+        self.variant = variant
 
         self.build_model()
 
     def build_model(self):
 
-        self.model = MambaVision(
-            num_classes=0
+        # num_classes=0 remove classifier original
+        self.model = create_model(
+
+            self.variant,
+
+            pretrained=True
         )
 
-        in_features = 768
+        # Descobrir tamanho automaticamente
+        dummy_features = self.model.forward_features
+
+        # Para Tiny normalmente 640
+        in_features = 640
 
         self.classifier = nn.Linear(
             in_features,
             self.num_classes
         )
+
+        self.model.head = nn.Identity()
 
         self.model = self.model.to(
             self.device
@@ -46,4 +59,4 @@ class MambaVisionModel(Modelo_Base):
 
     def get_target_layer(self):
 
-        return self.model.layers[-1]
+        return self.model.levels[-1]

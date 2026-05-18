@@ -1,6 +1,6 @@
 import torch.nn as nn
 from torchvision import models
-from modelo_base import Modelo_Base
+from .modelo_base import Modelo_Base
 
 
 class EfficientNetModel(Modelo_Base):

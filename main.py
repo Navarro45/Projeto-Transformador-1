@@ -14,7 +14,7 @@ def main():
     # CONFIG
     # ==================================================
 
-    MODEL_NAME = "efficientnet"
+    MODEL_NAME = "vit"
 
     TRAIN_DIR = "data/train"
 
