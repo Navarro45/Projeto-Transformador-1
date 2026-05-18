@@ -18,7 +18,7 @@ def main():
 
     TRAIN_DIR = "data/train"
 
-    TEST_DIR = "dataset/test"
+    TEST_DIR = "data/test"
 
     BATCH_SIZE = 16
 
