@@ -1,0 +1,39 @@
+# Virtual Environment
+venv/
+.env/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Jupyter
+.ipynb_checkpoints/
+
+# VSCode
+.vscode/
+
+# PyCharm
+.idea/
+
+# Resultados
+Resultados/
+
+# Modelos
+*.pth
+*.pt
+*.onnx
+
+# Logs
+*.log
+
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+venv/
+__pycache__/
+Resultados/
+venv/bin/activate.csh
