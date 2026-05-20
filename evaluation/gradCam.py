@@ -4,11 +4,10 @@ import numpy as np
 
 from PIL import Image
 
-from pytorch_grad_cam import GradCAM
-
-from pytorch_grad_cam.utils.image import (show_cam_on_image)
-
-from pytorch_grad_cam.utils.model_targets import (ClassifierOutputTarget)
+from utils.crop_and_pad import (
+    CENTER_CROP_RATIO,
+    crop_and_pad_image,
+)
 
 
 class GradCAMGenerator:
@@ -19,7 +18,9 @@ class GradCAMGenerator:
         transform,
         device,
         results_manager,
-        img_size=224
+        img_size=224,
+        use_crop_and_pad=True,
+        center_crop_ratio=CENTER_CROP_RATIO
     ):
 
         self.model_wrapper = model_wrapper
@@ -34,13 +35,61 @@ class GradCAMGenerator:
 
         self.img_size = img_size
 
+        self.use_crop_and_pad = use_crop_and_pad
+
+        self.center_crop_ratio = center_crop_ratio
+
+    def _prepare_image(self, image):
+
+        if not self.use_crop_and_pad:
+
+            return image.resize(
+                (self.img_size, self.img_size)
+            )
+
+        return crop_and_pad_image(
+            image,
+            image_size=self.img_size,
+            center_crop_ratio=self.center_crop_ratio,
+        )
+
+    def _load_gradcam_dependencies(self):
+
+        try:
+            from pytorch_grad_cam import GradCAM
+            from pytorch_grad_cam.utils.image import show_cam_on_image
+            from pytorch_grad_cam.utils.model_targets import ClassifierOutputTarget
+        except ModuleNotFoundError as exc:
+            raise ModuleNotFoundError(
+                "Grad-CAM requer o pacote `grad-cam`. "
+                "Instale com `pip install grad-cam`."
+            ) from exc
+
+        return (
+            GradCAM,
+            show_cam_on_image,
+            ClassifierOutputTarget
+        )
+
     def generate(self, image_path):
+
+        (
+            GradCAM,
+            show_cam_on_image,
+            ClassifierOutputTarget
+        ) = self._load_gradcam_dependencies()
 
         image = Image.open(
             image_path
         ).convert("RGB")
 
-        tensor = self.transform(image)
+        heatmap_image = self._prepare_image(
+            image
+        )
+
+        tensor = self.transform(
+            heatmap_image
+        )
 
         tensor = tensor.unsqueeze(0).to(
             self.device
@@ -76,11 +125,10 @@ class GradCAMGenerator:
             targets=targets
         )[0]
 
-        rgb_img = np.array(
-            image.resize(
-                (self.img_size, self.img_size)
-            )
-        ) / 255.0
+        rgb_img = (
+            np.array(heatmap_image) /
+            255.0
+        )
 
         visualization = show_cam_on_image(
             rgb_img,

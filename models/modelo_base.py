@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-class Modelo_Base:
+class Modelo_Base(nn.Module):
 
     def __init__(
         self,
@@ -11,6 +11,7 @@ class Modelo_Base:
         device,
         model_name="base_model"
     ):
+        super().__init__()
 
         self.num_classes = num_classes
 
@@ -100,29 +101,14 @@ class Modelo_Base:
     # FORWARD
     # ==================================================
 
-    def __call__(self, x):
+    def forward(self, x):
 
         outputs = self.forward_with_features(x)
 
         return outputs["logits"]
 
-    def train(self):
-        self.model.train()
-
-    def eval(self):
-        self.model.eval()
-
-    def parameters(self):
-        return self.model.parameters()
-
     def to(self, device):
 
-        self.model.to(device)
+        self.device = device
 
-        return self
-
-    def state_dict(self):
-        return self.model.state_dict()
-
-    def load_state_dict(self, state):
-        self.model.load_state_dict(state)
+        return super().to(device)
