@@ -13,7 +13,6 @@ class ModelFactory:
         "convnext": ConvNeXtModel,
         "vit": ViTModel,
         "vmamba": VisionMambaModel,
-        "visionmamba": VisionMambaModel,
     }
 
     @staticmethod

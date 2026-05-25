@@ -113,25 +113,100 @@ def save_metrics_bundle(
     return metrics
 
 
-def plot_training_history(history: Mapping[str, List[Number]], save_dir: str) -> None:
-    epochs = range(1, len(history["train_loss"]) + 1)
+def plot_training_history(
+    history: Mapping[str, List[Number]],
+    save_dir: str,
+) -> None:
 
-    plt.figure()
-    plt.plot(epochs, history["train_loss"], label="Train Loss")
-    plt.plot(epochs, history["val_loss"], label="Val Loss")
-    plt.legend()
+    os.makedirs(save_dir, exist_ok=True)
+
+    # Salva o histórico bruto
+    history_path = os.path.join(
+        save_dir,
+        "training_history.json"
+    )
+
+    with open(history_path, "w", encoding="utf-8") as f:
+        json.dump(history, f, indent=4)
+
+    train_loss = history.get("train_loss", [])
+    val_loss = history.get("val_loss", [])
+
+    train_acc = history.get("train_acc", [])
+    val_acc = history.get("val_acc", [])
+
+    epochs = range(1, len(train_loss) + 1)
+
+    # =========================
+    # LOSS
+    # =========================
+
+    plt.figure(figsize=(10, 6))
+
+    plt.plot(
+        epochs,
+        train_loss,
+        label="Train Loss",
+        linewidth=2,
+    )
+
+    plt.plot(
+        epochs,
+        val_loss,
+        label="Validation Loss",
+        linewidth=2,
+    )
+
     plt.title("Loss por Época")
     plt.xlabel("Épocas")
     plt.ylabel("Loss")
-    plt.savefig(os.path.join(save_dir, "loss.png"))
+
+    plt.grid(True)
+    plt.legend()
+
+    plt.tight_layout()
+
+    plt.savefig(
+        os.path.join(save_dir, "loss_curve.png"),
+        dpi=300,
+        bbox_inches="tight",
+    )
+
     plt.close()
 
-    plt.figure()
-    plt.plot(epochs, history["train_acc"], label="Train Acc")
-    plt.plot(epochs, history["val_acc"], label="Val Acc")
-    plt.legend()
+    # =========================
+    # ACCURACY
+    # =========================
+
+    plt.figure(figsize=(10, 6))
+
+    plt.plot(
+        epochs,
+        train_acc,
+        label="Train Accuracy",
+        linewidth=2,
+    )
+
+    plt.plot(
+        epochs,
+        val_acc,
+        label="Validation Accuracy",
+        linewidth=2,
+    )
+
     plt.title("Accuracy por Época")
     plt.xlabel("Épocas")
     plt.ylabel("Accuracy")
-    plt.savefig(os.path.join(save_dir, "accuracy.png"))
+
+    plt.grid(True)
+    plt.legend()
+
+    plt.tight_layout()
+
+    plt.savefig(
+        os.path.join(save_dir, "accuracy_curve.png"),
+        dpi=300,
+        bbox_inches="tight",
+    )
+
     plt.close()
