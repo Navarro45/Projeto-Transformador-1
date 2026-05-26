@@ -153,23 +153,16 @@ def main():
     results.save_metadata({
 
         "model": MODEL_NAME,
-
+        "num_classes": len(data.class_names),
         "epochs": EPOCHS,
-
         "batch_size": BATCH_SIZE,
-
         "learning_rate": LEARNING_RATE,
-
         "img_size": IMG_SIZE,
-
         "max_train_images": MAX_TRAIN_IMAGES,
-
         "max_validation_images":
             MAX_VALIDATION_IMAGES,
-
         "max_test_images":
             MAX_TEST_IMAGES,
-
         "device": str(device)
     })
 
