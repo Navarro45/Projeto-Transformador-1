@@ -55,3 +55,7 @@ class EfficientNetModel(Modelo_Base):
     def get_target_layer(self):
 
         return self.model.features[-1]
+
+    def supports_gradcam(self):
+
+        return True

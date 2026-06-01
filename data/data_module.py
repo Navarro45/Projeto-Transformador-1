@@ -2,6 +2,7 @@ from torchvision import datasets, transforms
 from torch.utils.data import (DataLoader, random_split,Subset)
 
 import random
+import torch
 
 
 class DataModule:
@@ -21,7 +22,10 @@ class DataModule:
         seed=42
     ):
 
-        random.seed(seed)
+        rng = random.Random(seed)
+
+        generator = torch.Generator()
+        generator.manual_seed(seed)
 
         self.transform = transforms.Compose([
 
@@ -62,7 +66,8 @@ class DataModule:
 
         train_dataset, validation_dataset = random_split(
             full_train_dataset,
-            [train_size, val_size]
+            [train_size, val_size],
+            generator=generator
         )
 
         # =========================
@@ -71,7 +76,7 @@ class DataModule:
 
         if max_train_images is not None:
 
-            indices = random.sample(
+            indices = rng.sample(
                 range(len(train_dataset)),
                 min(
                     max_train_images,
@@ -90,7 +95,7 @@ class DataModule:
 
         if max_validation_images is not None:
 
-            indices = random.sample(
+            indices = rng.sample(
                 range(len(validation_dataset)),
                 min(
                     max_validation_images,
@@ -109,7 +114,7 @@ class DataModule:
 
         if max_test_images is not None:
 
-            indices = random.sample(
+            indices = rng.sample(
                 range(len(full_test_dataset)),
                 min(
                     max_test_images,
@@ -129,7 +134,8 @@ class DataModule:
         self.train_loader = DataLoader(
             train_dataset,
             batch_size=batch_size,
-            shuffle=True
+            shuffle=True,
+            generator=generator
         )
 
         self.validation_loader = DataLoader(

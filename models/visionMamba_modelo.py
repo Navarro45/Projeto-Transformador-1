@@ -1,62 +1,94 @@
 import torch.nn as nn
-from mambavision import create_model
-from .modelo_base import BaseVisionModel
+import torch
+import timm
+
+from .modelo_base import Modelo_Base
 
 
-class MambaVisionModel(BaseVisionModel):
+class VisionMambaModel(Modelo_Base):
 
     def __init__(
         self,
         num_classes,
         device,
-        variant="mamba_vision_T"
+        variant="mambaout_tiny",
+        pretrained=True
     ):
 
         super().__init__(
             num_classes,
             device,
-            model_name=variant
+            model_name="vmamba"
         )
 
         self.variant = variant
+        self.pretrained = pretrained
 
         self.build_model()
 
     def build_model(self):
 
-        # num_classes=0 remove classifier original
-        self.model = create_model(
+        try:
+            self.model = timm.create_model(
+                self.variant,
+                pretrained=self.pretrained,
+                num_classes=0,
+            )
+        except Exception as exc:
+            if not self.pretrained:
+                raise
 
-            self.variant,
+            print(
+                "Aviso: nao foi possivel carregar pesos pre-treinados "
+                f"para {self.variant}. Usando pesos aleatorios. Erro: {exc}"
+            )
 
-            pretrained=True
-        )
+            self.model = timm.create_model(
+                self.variant,
+                pretrained=False,
+                num_classes=0,
+            )
 
-        # Descobrir tamanho automaticamente
-        dummy_features = self.model.forward_features
-
-        # Para Tiny normalmente 640
-        in_features = 640
+        in_features = self._infer_classifier_input_features()
 
         self.classifier = nn.Linear(
             in_features,
             self.num_classes
         )
 
-        self.model.head = nn.Identity()
-
-        self.model = self.model.to(
-            self.device
-        )
-
-        self.classifier = self.classifier.to(
-            self.device
-        )
+        self.to(self.device)
 
     def forward_features(self, x):
 
         return self.model(x)
 
+    def _infer_classifier_input_features(self):
+
+        was_training = self.model.training
+        self.model.eval()
+
+        with torch.no_grad():
+            dummy = torch.zeros(1, 3, 224, 224)
+            features = self.model(dummy)
+
+        if was_training:
+            self.model.train()
+
+        return features.shape[1]
+
+    def get_classifier_input_features(self):
+
+        return self.classifier.in_features
+
     def get_target_layer(self):
 
-        return self.model.levels[-1]
+        if hasattr(self.model, "stages"):
+            return self.model.stages[-1]
+
+        if hasattr(self.model, "layers"):
+            return self.model.layers[-1]
+
+        return self.model
+
+
+MambaVisionModel = VisionMambaModel
