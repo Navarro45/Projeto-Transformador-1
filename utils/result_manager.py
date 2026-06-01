@@ -11,7 +11,7 @@ class ResultsManager:
         self.model_name = model_name
 
         timestamp = datetime.now().strftime(
-            "%Y-%m-%d_%H-%M-%S"
+            "%Y-%m-%d_%H-%M-%S_%f"
         )
 
         # =========================
@@ -114,6 +114,34 @@ class ResultsManager:
                 indent=4
             )
 
+    def save_json(self, relative_path, data):
+
+        path = os.path.join(
+            self.base_dir,
+            relative_path
+        )
+
+        folder = os.path.dirname(path)
+
+        if folder:
+
+            os.makedirs(
+                folder,
+                exist_ok=True
+            )
+
+        with open(
+            path,
+            "w",
+            encoding="utf-8"
+        ) as f:
+
+            json.dump(
+                data,
+                f,
+                indent=4
+            )
+
     # =========================
     # CAMINHOS AUXILIARES
     # =========================
@@ -187,3 +215,49 @@ class ResultsManager:
         print(f"Plots: {self.plots_dir}")
 
         print("=" * 60)
+
+
+    @classmethod
+    def from_existing(cls, base_dir):
+
+        instance = cls.__new__(cls)
+
+        instance.base_dir = str(base_dir)
+
+        instance.model_name = os.path.basename(
+            instance.base_dir
+        )
+
+        instance.model_dir = os.path.join(
+            instance.base_dir,
+            "model"
+        )
+
+        instance.metrics_dir = os.path.join(
+            instance.base_dir,
+            "metrics"
+        )
+
+        instance.predictions_dir = os.path.join(
+            instance.base_dir,
+            "predictions"
+        )
+
+        instance.gradcam_dir = os.path.join(
+            instance.base_dir,
+            "gradcam"
+        )
+
+        instance.metadata_dir = os.path.join(
+            instance.base_dir,
+            "metadata"
+        )
+
+        instance.plots_dir = os.path.join(
+            instance.base_dir,
+            "plots"
+        )
+
+        instance._create_folders()
+
+        return instance

@@ -53,3 +53,7 @@ class ResNetModel(Modelo_Base):
     def get_target_layer(self):
 
         return self.model.layer4[-1]
+
+    def supports_gradcam(self):
+
+        return True

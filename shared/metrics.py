@@ -2,6 +2,10 @@ import json
 import os
 from typing import List, Mapping, Sequence, Union
 
+import matplotlib
+
+matplotlib.use("Agg")
+
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.metrics import (
@@ -33,7 +37,14 @@ def plot_confusion_matrix(
     classes: Sequence[str],
     save_path: str,
 ) -> None:
-    cm = confusion_matrix(y_true, y_pred, normalize="true")
+    labels = list(range(len(classes)))
+
+    cm = confusion_matrix(
+        y_true,
+        y_pred,
+        labels=labels,
+        normalize="true"
+    )
 
     plt.figure()
     plt.imshow(cm, vmin=0.0, vmax=1.0, cmap="Blues")
@@ -64,8 +75,15 @@ def save_classification_report(
     classes: Sequence[str],
     save_path: str,
 ) -> Mapping:
+    labels = list(range(len(classes)))
+
     report = classification_report(
-        y_true, y_pred, target_names=list(classes), output_dict=True, zero_division=0
+        y_true,
+        y_pred,
+        labels=labels,
+        target_names=list(classes),
+        output_dict=True,
+        zero_division=0
     )
     d = os.path.dirname(save_path)
     if d:

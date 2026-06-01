@@ -37,6 +37,9 @@ class Modelo_Base(nn.Module):
     def get_target_layer(self):
         raise NotImplementedError
 
+    def supports_gradcam(self):
+        return False
+
     # ==================================================
     # UNIVERSAL FORWARD
     # ==================================================

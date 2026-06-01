@@ -1,11 +1,24 @@
 import argparse
 import gc
+import json
+import os
+import random
 
 import torch
 
 from data.data_module import DataModule
 
 from evaluation.evaluator import Evaluator
+
+from evaluation.ensemble import (
+    evaluate_ensemble,
+    summarize_metric_runs,
+)
+
+from evaluation.heatmap_runner import (
+    run_heatmap_mode,
+    run_heatmaps_for_records,
+)
 
 from models.model_factory import ModelFactory
 
@@ -15,10 +28,47 @@ from shared.metrics import plot_training_history
 
 from utils.result_manager import ResultsManager
 
-
 def _optional_limit(value):
 
     return None if value is None or value < 0 else value
+
+
+def set_global_seed(seed):
+
+    random.seed(seed)
+
+    torch.manual_seed(seed)
+
+    if torch.cuda.is_available():
+
+        torch.cuda.manual_seed_all(seed)
+
+
+def get_model_names(include_non_gradcam=True):
+
+    model_names = []
+
+    for model_name in ModelFactory.MODELS.keys():
+
+        if not include_non_gradcam and model_name in ["vit", "vmamba"]:
+
+            continue
+
+        model_names.append(model_name)
+
+    return model_names
+
+
+def get_class_names(dataset_dir):
+
+    return sorted(
+        [
+            folder for folder in os.listdir(dataset_dir)
+            if os.path.isdir(
+                os.path.join(dataset_dir, folder)
+            )
+        ]
+    )
 
 
 def run_pipeline(
@@ -52,17 +102,13 @@ def run_pipeline(
     max_validation_images=-1,
 
     max_test_images=-1,
-):
 
-    if not model_name:
+    seed=42,
 
-        raise ValueError(
-            "O nome do modelo deve ser informado."
-        )
+    run_index=1,
+    ):
 
-    # =========================
-    # DEVICE
-    # =========================
+    set_global_seed(seed)
 
     device = torch.device(
         "cuda"
@@ -99,6 +145,8 @@ def run_pipeline(
         max_test_images=_optional_limit(
             max_test_images
         ),
+
+        seed=seed,
     )
 
     # =========================
@@ -125,8 +173,6 @@ def run_pipeline(
     results = ResultsManager(
         model_wrapper.model_name
     )
-
-    results.summary()
 
     # =========================
     # TRAINER
@@ -168,15 +214,13 @@ def run_pipeline(
     history = trainer.train()
 
     # =========================
-    # TRAINING PLOTS
+    # PLOTS
     # =========================
 
     plot_training_history(
         history,
         results.plots_dir
     )
-
-    print("Training plots saved")
 
     # =========================
     # SAVE MODEL
@@ -206,7 +250,7 @@ def run_pipeline(
         results_manager=results,
     )
 
-    evaluator.evaluate()
+    metrics = evaluator.evaluate()
 
     # =========================
     # METADATA
@@ -225,54 +269,87 @@ def run_pipeline(
 
             "img_size": img_size,
 
-            "early_stopping_patience": _optional_limit(
-                early_stopping_patience
-            ),
+            "early_stopping_patience": early_stopping_patience,
 
-            "early_stopping_min_delta": early_stopping_min_delta,
-
-            "scheduler": "ReduceLROnPlateau",
-
-            "scheduler_patience": _optional_limit(
-                scheduler_patience
-            ),
-
-            "scheduler_factor": scheduler_factor,
-
-            "scheduler_min_lr": scheduler_min_lr,
-
-            "max_train_images": _optional_limit(
-                max_train_images
-            ),
-
-            "max_validation_images": _optional_limit(
-                max_validation_images
-            ),
-
-            "max_test_images": _optional_limit(
-                max_test_images
-            ),
+            "scheduler_patience": scheduler_patience,
 
             "device": str(device),
+
+            "run_index": run_index,
+
+            "seed": seed,
         }
     )
 
-    print("Metadata saved")
-
     print("Pipeline finished")
+
+    return {
+        "name": model_wrapper.model_name,
+        "model_key": model_name,
+        "run_index": run_index,
+        "seed": seed,
+        "results_dir": results.base_dir,
+        "metrics": metrics,
+        "class_names": data.class_names,
+    }
+
+
+def save_summary(path, model_records, ensemble_records=None):
+
+    ensemble_records = ensemble_records or []
+
+    os.makedirs(
+        os.path.dirname(path),
+        exist_ok=True
+    )
+
+    payload = {
+        "models": summarize_metric_runs(
+            model_records
+        ),
+        "ensembles": summarize_metric_runs(
+            ensemble_records
+        ),
+        "model_runs": model_records,
+        "ensemble_runs": ensemble_records,
+    }
+
+    with open(
+        path,
+        "w",
+        encoding="utf-8"
+    ) as f:
+
+        json.dump(
+            payload,
+            f,
+            indent=4
+        )
+
+    print(f"Resumo salvo em: {path}")
 
 
 def parse_args():
 
-    parser = argparse.ArgumentParser(
-        description="Treina e avalia modelos."
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        "--mode",
+        type=str,
+        default="train",
+        choices=["train", "heatmap"]
     )
 
     parser.add_argument(
         "--model",
         required=True,
+        type=str
+    )
+
+    parser.add_argument(
+        "--weights",
         type=str,
-        help="Nome do modelo ou 'all'."
+        default=None
     )
 
     parser.add_argument(
@@ -357,6 +434,24 @@ def parse_args():
         default=-1
     )
 
+    parser.add_argument(
+        "--runs",
+        type=int,
+        default=1
+    )
+
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=42
+    )
+
+    parser.add_argument(
+        "--heatmaps-per-model",
+        type=int,
+        default=0
+    )
+
     return parser.parse_args()
 
 
@@ -365,58 +460,46 @@ def main():
     args = parse_args()
 
     # =========================
-    # REMOVE ALIASES DUPLICADOS
+    # HEATMAP MODE
     # =========================
 
-    unique_models = []
+    if args.mode == "heatmap":
 
-    for model_name in ModelFactory.MODELS.keys():
-
-        normalized = model_name.lower()
-
-        if normalized == "visionmamba":
-            continue
-
-        unique_models.append(model_name)
+        run_heatmap_mode(args)
+        return
 
     # =========================
-    # EXECUTA TODOS
+    # TRAIN MODE
     # =========================
+
+    unique_models = get_model_names()
+
+    if args.runs < 1:
+
+        raise ValueError(
+            "--runs deve ser maior ou igual a 1"
+        )
+
+    model_records = []
 
     if args.model.lower() == "all":
 
-        total_models = len(unique_models)
-
-        # TESTES QUE VOCÊ QUER REALIZAR
-        scheduler_tests = [3,5,8]
-
-        for scheduler_patience in scheduler_tests:
+        for run_index in range(1, args.runs + 1):
 
             print("\n")
             print("=" * 70)
 
             print(
-                f"TESTANDO scheduler_patience="
-                f"{scheduler_patience}"
+                f"EXECUCAO {run_index}/{args.runs}"
             )
 
             print("=" * 70)
 
             for index, model_name in enumerate(unique_models):
 
-                print("\n")
-                print("=" * 70)
-
-                print(
-                    f"[{index + 1}/{total_models}] "
-                    f"Executando modelo: {model_name}"
-                )
-
-                print("=" * 70)
-
                 try:
 
-                    run_pipeline(
+                    record = run_pipeline(
 
                         model_name=model_name,
 
@@ -436,8 +519,7 @@ def main():
 
                         early_stopping_min_delta=args.early_stopping_min_delta,
 
-                        # AQUI ALTERA AUTOMATICAMENTE
-                        scheduler_patience=scheduler_patience,
+                        scheduler_patience=args.scheduler_patience,
 
                         scheduler_factor=args.scheduler_factor,
 
@@ -448,26 +530,17 @@ def main():
                         max_validation_images=args.max_validation_images,
 
                         max_test_images=args.max_test_images,
+
+                        seed=args.seed + run_index - 1,
+
+                        run_index=run_index,
                     )
 
-                    print(
-                        f"\nModelo {model_name} "
-                        f"finalizado com sucesso"
-                    )
+                    model_records.append(record)
 
                 except Exception as error:
 
-                    print("\n")
-                    print("!" * 70)
-
-                    print(
-                        f"ERRO AO EXECUTAR O MODELO: "
-                        f"{model_name}"
-                    )
-
                     print(error)
-
-                    print("!" * 70)
 
                 finally:
 
@@ -477,49 +550,100 @@ def main():
 
                         torch.cuda.empty_cache()
 
-        print("\n")
-        print("=" * 70)
-        print("TODOS OS MODELOS FORAM PROCESSADOS")
-        print("=" * 70)
+        class_names = (
+            model_records[0]["class_names"]
+            if model_records
+            else get_class_names(args.test_dir)
+        )
 
-    # =========================
-    # EXECUTA UM ÚNICO MODELO
-    # =========================
+        ensemble_records = evaluate_ensemble(
+            model_records,
+            class_names
+        )
+
+        save_summary(
+            os.path.join(
+                "Resultados",
+                "summary_all.json"
+            ),
+            model_records,
+            ensemble_records
+        )
+
+        if args.heatmaps_per_model > 0:
+
+            run_heatmaps_for_records(
+                model_records,
+                args.test_dir,
+                img_size=args.img_size,
+                count=args.heatmaps_per_model
+            )
 
     else:
 
-        run_pipeline(
+        for run_index in range(1, args.runs + 1):
 
-            model_name=args.model,
+            record = run_pipeline(
 
-            train_dir=args.train_dir,
+                model_name=args.model,
 
-            test_dir=args.test_dir,
+                train_dir=args.train_dir,
 
-            batch_size=args.batch_size,
+                test_dir=args.test_dir,
 
-            epochs=args.epochs,
+                batch_size=args.batch_size,
 
-            learning_rate=args.learning_rate,
+                epochs=args.epochs,
 
-            img_size=args.img_size,
+                learning_rate=args.learning_rate,
 
-            early_stopping_patience=args.early_stopping_patience,
+                img_size=args.img_size,
 
-            early_stopping_min_delta=args.early_stopping_min_delta,
+                early_stopping_patience=args.early_stopping_patience,
 
-            scheduler_patience=args.scheduler_patience,
+                early_stopping_min_delta=args.early_stopping_min_delta,
 
-            scheduler_factor=args.scheduler_factor,
+                scheduler_patience=args.scheduler_patience,
 
-            scheduler_min_lr=args.scheduler_min_lr,
+                scheduler_factor=args.scheduler_factor,
 
-            max_train_images=args.max_train_images,
+                scheduler_min_lr=args.scheduler_min_lr,
 
-            max_validation_images=args.max_validation_images,
+                max_train_images=args.max_train_images,
 
-            max_test_images=args.max_test_images,
+                max_validation_images=args.max_validation_images,
+
+                max_test_images=args.max_test_images,
+
+                seed=args.seed + run_index - 1,
+
+                run_index=run_index,
+            )
+
+            model_records.append(record)
+
+            gc.collect()
+
+            if torch.cuda.is_available():
+
+                torch.cuda.empty_cache()
+
+        save_summary(
+            os.path.join(
+                "Resultados",
+                f"summary_{args.model}.json"
+            ),
+            model_records
         )
+
+        if args.heatmaps_per_model > 0:
+
+            run_heatmaps_for_records(
+                model_records,
+                args.test_dir,
+                img_size=args.img_size,
+                count=args.heatmaps_per_model
+            )
 
 
 if __name__ == "__main__":

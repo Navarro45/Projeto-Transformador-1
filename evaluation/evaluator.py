@@ -1,10 +1,17 @@
 import os
 import torch
 import numpy as np
+
+import matplotlib
+
+matplotlib.use("Agg")
+
 import matplotlib.pyplot as plt
 
 from sklearn.metrics import (confusion_matrix,classification_report,ConfusionMatrixDisplay
 )
+
+from shared.metrics import compute_metrics
 
 
 class Evaluator:
@@ -97,13 +104,21 @@ class Evaluator:
 
         cm = confusion_matrix(
             y_true,
-            y_pred
+            y_pred,
+            labels=list(range(len(self.class_names)))
         )
 
         report = classification_report(
             y_true,
             y_pred,
-            target_names=self.class_names
+            labels=list(range(len(self.class_names))),
+            target_names=self.class_names,
+            zero_division=0
+        )
+
+        metrics = compute_metrics(
+            y_true,
+            y_pred
         )
 
         # =========================
@@ -204,4 +219,14 @@ class Evaluator:
 
             f.write(report)
 
+        self.results.save_json(
+            os.path.join(
+                "metrics",
+                "metrics.json"
+            ),
+            metrics
+        )
+
         print("Evaluation saved")
+
+        return metrics
