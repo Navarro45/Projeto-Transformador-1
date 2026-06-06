@@ -17,8 +17,6 @@ __pycache__/
 # PyCharm
 .idea/
 
-# Resultados
-Resultados/
 
 # Modelos
 *.pth
