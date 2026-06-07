@@ -1,0 +1,50 @@
+{
+    "models": {
+        "cnn_shallow": {
+            "runs": 1,
+            "metrics": {
+                "accuracy": {
+                    "mean": 0.0,
+                    "std": 0.0
+                },
+                "precision": {
+                    "mean": 0.0,
+                    "std": 0.0
+                },
+                "recall": {
+                    "mean": 0.0,
+                    "std": 0.0
+                },
+                "f1": {
+                    "mean": 0.0,
+                    "std": 0.0
+                }
+            },
+            "results_dirs": [
+                "Resultados\\cnn_shallow\\2026-05-27_01-15-51_379369"
+            ]
+        }
+    },
+    "ensembles": {},
+    "model_runs": [
+        {
+            "name": "cnn_shallow",
+            "model_key": "cnn_shallow",
+            "run_index": 1,
+            "seed": 42,
+            "results_dir": "Resultados\\cnn_shallow\\2026-05-27_01-15-51_379369",
+            "metrics": {
+                "accuracy": 0.0,
+                "precision": 0.0,
+                "recall": 0.0,
+                "f1": 0.0
+            },
+            "class_names": [
+                "galaxy",
+                "quasar",
+                "star"
+            ]
+        }
+    ],
+    "ensemble_runs": []
+}

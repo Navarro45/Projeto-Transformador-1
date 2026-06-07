@@ -1,0 +1,9 @@
+              precision    recall  f1-score   support
+
+      galaxy       0.94      0.98      0.96       812
+      quasar       0.85      0.76      0.80       713
+        star       0.83      0.87      0.85       829
+
+    accuracy                           0.87      2354
+   macro avg       0.87      0.87      0.87      2354
+weighted avg       0.87      0.87      0.87      2354
