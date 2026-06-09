@@ -33,5 +33,4 @@ Thumbs.db
 
 venv/
 __pycache__/
-Resultados/
 venv/bin/activate.csh

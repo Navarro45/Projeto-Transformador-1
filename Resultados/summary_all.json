@@ -1,0 +1,884 @@
+{
+    "models": {
+        "efficientnet_b0": {
+            "runs": 5,
+            "metrics": {
+                "accuracy": {
+                    "mean": 0.8659303313508921,
+                    "std": 0.009524058730733212
+                },
+                "precision": {
+                    "mean": 0.8701436499261257,
+                    "std": 0.007787036523962316
+                },
+                "recall": {
+                    "mean": 0.8659303313508921,
+                    "std": 0.009524058730733212
+                },
+                "f1": {
+                    "mean": 0.8651276009117315,
+                    "std": 0.009696636662073578
+                }
+            },
+            "results_dirs": [
+                "Resultados\\efficientnet_b0\\2026-05-30_06-50-27_689068",
+                "Resultados\\efficientnet_b0\\2026-05-30_12-41-00_882588",
+                "Resultados\\efficientnet_b0\\2026-05-30_17-16-32_337353",
+                "Resultados\\efficientnet_b0\\2026-05-30_23-22-50_986833",
+                "Resultados\\efficientnet_b0\\2026-05-31_03-58-03_167258"
+            ]
+        },
+        "resnet50": {
+            "runs": 5,
+            "metrics": {
+                "accuracy": {
+                    "mean": 0.8752761257434155,
+                    "std": 0.01582571140441809
+                },
+                "precision": {
+                    "mean": 0.882742326933769,
+                    "std": 0.010405265811246213
+                },
+                "recall": {
+                    "mean": 0.8752761257434155,
+                    "std": 0.01582571140441809
+                },
+                "f1": {
+                    "mean": 0.8741743828987417,
+                    "std": 0.01709376163784897
+                }
+            },
+            "results_dirs": [
+                "Resultados\\resnet50\\2026-05-30_07-05-59_968857",
+                "Resultados\\resnet50\\2026-05-30_12-57-03_704291",
+                "Resultados\\resnet50\\2026-05-30_17-31-58_810149",
+                "Resultados\\resnet50\\2026-05-30_23-39-00_619757",
+                "Resultados\\resnet50\\2026-05-31_04-13-23_943890"
+            ]
+        },
+        "convnext_tiny": {
+            "runs": 5,
+            "metrics": {
+                "accuracy": {
+                    "mean": 0.8483432455395071,
+                    "std": 0.014978352333756342
+                },
+                "precision": {
+                    "mean": 0.8573337315950921,
+                    "std": 0.010365221254025555
+                },
+                "recall": {
+                    "mean": 0.8483432455395071,
+                    "std": 0.014978352333756342
+                },
+                "f1": {
+                    "mean": 0.8470334279035502,
+                    "std": 0.015931368677680583
+                }
+            },
+            "results_dirs": [
+                "Resultados\\convnext_tiny\\2026-05-30_07-29-24_567436",
+                "Resultados\\convnext_tiny\\2026-05-30_13-21-20_769318",
+                "Resultados\\convnext_tiny\\2026-05-30_17-57-20_227201",
+                "Resultados\\convnext_tiny\\2026-05-31_00-03-11_350833",
+                "Resultados\\convnext_tiny\\2026-05-31_04-37-41_019623"
+            ]
+        },
+        "vit_b_16": {
+            "runs": 5,
+            "metrics": {
+                "accuracy": {
+                    "mean": 0.8226847918436704,
+                    "std": 0.015623727461644967
+                },
+                "precision": {
+                    "mean": 0.8247505981179962,
+                    "std": 0.016244647053283694
+                },
+                "recall": {
+                    "mean": 0.8226847918436704,
+                    "std": 0.015623727461644967
+                },
+                "f1": {
+                    "mean": 0.8210303127772285,
+                    "std": 0.016402663074231008
+                }
+            },
+            "results_dirs": [
+                "Resultados\\vit_b_16\\2026-05-30_08-12-46_873109",
+                "Resultados\\vit_b_16\\2026-05-30_14-04-41_065897",
+                "Resultados\\vit_b_16\\2026-05-30_18-41-07_798373",
+                "Resultados\\vit_b_16\\2026-05-31_00-46-31_373108",
+                "Resultados\\vit_b_16\\2026-05-31_05-17-25_507906"
+            ]
+        },
+        "vmamba": {
+            "runs": 5,
+            "metrics": {
+                "accuracy": {
+                    "mean": 0.7639762107051826,
+                    "std": 0.21007294765043794
+                },
+                "precision": {
+                    "mean": 0.7412589919849564,
+                    "std": 0.2679871184395509
+                },
+                "recall": {
+                    "mean": 0.7639762107051826,
+                    "std": 0.21007294765043794
+                },
+                "f1": {
+                    "mean": 0.7300275079639243,
+                    "std": 0.27666751227720315
+                }
+            },
+            "results_dirs": [
+                "Resultados\\vmamba\\2026-05-30_09-55-35_863713",
+                "Resultados\\vmamba\\2026-05-30_15-44-09_074330",
+                "Resultados\\vmamba\\2026-05-30_21-01-10_513814",
+                "Resultados\\vmamba\\2026-05-31_02-18-59_024952",
+                "Resultados\\vmamba\\2026-05-31_07-10-23_458319"
+            ]
+        },
+        "cnn_shallow": {
+            "runs": 5,
+            "metrics": {
+                "accuracy": {
+                    "mean": 0.7101104502973661,
+                    "std": 0.025472382310552072
+                },
+                "precision": {
+                    "mean": 0.7228151368583857,
+                    "std": 0.020010600869655278
+                },
+                "recall": {
+                    "mean": 0.7101104502973661,
+                    "std": 0.025472382310552072
+                },
+                "f1": {
+                    "mean": 0.7003373524523478,
+                    "std": 0.029304510316512284
+                }
+            },
+            "results_dirs": [
+                "Resultados\\cnn_shallow\\2026-05-30_11-24-25_916357",
+                "Resultados\\cnn_shallow\\2026-05-30_16-30-16_017307",
+                "Resultados\\cnn_shallow\\2026-05-30_21-53-06_507718",
+                "Resultados\\cnn_shallow\\2026-05-31_03-07-01_364312",
+                "Resultados\\cnn_shallow\\2026-05-31_08-42-22_297937"
+            ]
+        }
+    },
+    "ensembles": {
+        "majority_vote": {
+            "runs": 5,
+            "metrics": {
+                "accuracy": {
+                    "mean": 0.8731520815632965,
+                    "std": 0.013582195485738344
+                },
+                "precision": {
+                    "mean": 0.8794253832195873,
+                    "std": 0.011676664089183827
+                },
+                "recall": {
+                    "mean": 0.8731520815632965,
+                    "std": 0.013582195485738344
+                },
+                "f1": {
+                    "mean": 0.8719143829194703,
+                    "std": 0.014347785573331875
+                }
+            },
+            "results_dirs": [
+                "Resultados\\ensemble\\2026-05-31_09-24-19_351813\\run_1\\majority_vote",
+                "Resultados\\ensemble\\2026-05-31_09-24-19_351813\\run_2\\majority_vote",
+                "Resultados\\ensemble\\2026-05-31_09-24-19_351813\\run_3\\majority_vote",
+                "Resultados\\ensemble\\2026-05-31_09-24-19_351813\\run_4\\majority_vote",
+                "Resultados\\ensemble\\2026-05-31_09-24-19_351813\\run_5\\majority_vote"
+            ]
+        },
+        "mean_probability": {
+            "runs": 5,
+            "metrics": {
+                "accuracy": {
+                    "mean": 0.889804587935429,
+                    "std": 0.014695193174579022
+                },
+                "precision": {
+                    "mean": 0.8923759764843894,
+                    "std": 0.012117702755963853
+                },
+                "recall": {
+                    "mean": 0.889804587935429,
+                    "std": 0.014695193174579022
+                },
+                "f1": {
+                    "mean": 0.8891635234745812,
+                    "std": 0.014951096147345619
+                }
+            },
+            "results_dirs": [
+                "Resultados\\ensemble\\2026-05-31_09-24-19_351813\\run_1\\mean_probability",
+                "Resultados\\ensemble\\2026-05-31_09-24-19_351813\\run_2\\mean_probability",
+                "Resultados\\ensemble\\2026-05-31_09-24-19_351813\\run_3\\mean_probability",
+                "Resultados\\ensemble\\2026-05-31_09-24-19_351813\\run_4\\mean_probability",
+                "Resultados\\ensemble\\2026-05-31_09-24-19_351813\\run_5\\mean_probability"
+            ]
+        }
+    },
+    "model_runs": [
+        {
+            "name": "efficientnet_b0",
+            "model_key": "efficientnet",
+            "run_index": 1,
+            "seed": 42,
+            "results_dir": "Resultados\\efficientnet_b0\\2026-05-30_06-50-27_689068",
+            "metrics": {
+                "accuracy": 0.862786745964316,
+                "precision": 0.8686810975646055,
+                "recall": 0.862786745964316,
+                "f1": 0.862492548536669
+            },
+            "class_names": [
+                "galaxy",
+                "quasar",
+                "star"
+            ]
+        },
+        {
+            "name": "resnet50",
+            "model_key": "resnet",
+            "run_index": 1,
+            "seed": 42,
+            "results_dir": "Resultados\\resnet50\\2026-05-30_07-05-59_968857",
+            "metrics": {
+                "accuracy": 0.8717077315208156,
+                "precision": 0.8762714615851456,
+                "recall": 0.8717077315208156,
+                "f1": 0.8689401205419733
+            },
+            "class_names": [
+                "galaxy",
+                "quasar",
+                "star"
+            ]
+        },
+        {
+            "name": "convnext_tiny",
+            "model_key": "convnext",
+            "run_index": 1,
+            "seed": 42,
+            "results_dir": "Resultados\\convnext_tiny\\2026-05-30_07-29-24_567436",
+            "metrics": {
+                "accuracy": 0.85089209855565,
+                "precision": 0.8617659610097744,
+                "recall": 0.85089209855565,
+                "f1": 0.8498413245815607
+            },
+            "class_names": [
+                "galaxy",
+                "quasar",
+                "star"
+            ]
+        },
+        {
+            "name": "vit_b_16",
+            "model_key": "vit",
+            "run_index": 1,
+            "seed": 42,
+            "results_dir": "Resultados\\vit_b_16\\2026-05-30_08-12-46_873109",
+            "metrics": {
+                "accuracy": 0.8530161427357689,
+                "precision": 0.8554229382249751,
+                "recall": 0.8530161427357689,
+                "f1": 0.8526774262079398
+            },
+            "class_names": [
+                "galaxy",
+                "quasar",
+                "star"
+            ]
+        },
+        {
+            "name": "vmamba",
+            "model_key": "vmamba",
+            "run_index": 1,
+            "seed": 42,
+            "results_dir": "Resultados\\vmamba\\2026-05-30_09-55-35_863713",
+            "metrics": {
+                "accuracy": 0.8793542905692439,
+                "precision": 0.8861962330490532,
+                "recall": 0.8793542905692439,
+                "f1": 0.8791781449481995
+            },
+            "class_names": [
+                "galaxy",
+                "quasar",
+                "star"
+            ]
+        },
+        {
+            "name": "cnn_shallow",
+            "model_key": "cnn_shallow",
+            "run_index": 1,
+            "seed": 42,
+            "results_dir": "Resultados\\cnn_shallow\\2026-05-30_11-24-25_916357",
+            "metrics": {
+                "accuracy": 0.7591333899745115,
+                "precision": 0.7616187965222321,
+                "recall": 0.7591333899745115,
+                "f1": 0.7553505949963679
+            },
+            "class_names": [
+                "galaxy",
+                "quasar",
+                "star"
+            ]
+        },
+        {
+            "name": "efficientnet_b0",
+            "model_key": "efficientnet",
+            "run_index": 2,
+            "seed": 43,
+            "results_dir": "Resultados\\efficientnet_b0\\2026-05-30_12-41-00_882588",
+            "metrics": {
+                "accuracy": 0.8640611724723875,
+                "precision": 0.8706867280900353,
+                "recall": 0.8640611724723875,
+                "f1": 0.8639277925242647
+            },
+            "class_names": [
+                "galaxy",
+                "quasar",
+                "star"
+            ]
+        },
+        {
+            "name": "resnet50",
+            "model_key": "resnet",
+            "run_index": 2,
+            "seed": 43,
+            "results_dir": "Resultados\\resnet50\\2026-05-30_12-57-03_704291",
+            "metrics": {
+                "accuracy": 0.872982158028887,
+                "precision": 0.8846990718742979,
+                "recall": 0.872982158028887,
+                "f1": 0.8736640568049682
+            },
+            "class_names": [
+                "galaxy",
+                "quasar",
+                "star"
+            ]
+        },
+        {
+            "name": "convnext_tiny",
+            "model_key": "convnext",
+            "run_index": 2,
+            "seed": 43,
+            "results_dir": "Resultados\\convnext_tiny\\2026-05-30_13-21-20_769318",
+            "metrics": {
+                "accuracy": 0.8517417162276976,
+                "precision": 0.8501440804027252,
+                "recall": 0.8517417162276976,
+                "f1": 0.8506499840151132
+            },
+            "class_names": [
+                "galaxy",
+                "quasar",
+                "star"
+            ]
+        },
+        {
+            "name": "vit_b_16",
+            "model_key": "vit",
+            "run_index": 2,
+            "seed": 43,
+            "results_dir": "Resultados\\vit_b_16\\2026-05-30_14-04-41_065897",
+            "metrics": {
+                "accuracy": 0.8160577740016992,
+                "precision": 0.8143633366661412,
+                "recall": 0.8160577740016992,
+                "f1": 0.8139650244137198
+            },
+            "class_names": [
+                "galaxy",
+                "quasar",
+                "star"
+            ]
+        },
+        {
+            "name": "vmamba",
+            "model_key": "vmamba",
+            "run_index": 2,
+            "seed": 43,
+            "results_dir": "Resultados\\vmamba\\2026-05-30_15-44-09_074330",
+            "metrics": {
+                "accuracy": 0.8355989804587935,
+                "precision": 0.8319558528021676,
+                "recall": 0.8355989804587935,
+                "f1": 0.8327224327135021
+            },
+            "class_names": [
+                "galaxy",
+                "quasar",
+                "star"
+            ]
+        },
+        {
+            "name": "cnn_shallow",
+            "model_key": "cnn_shallow",
+            "run_index": 2,
+            "seed": 43,
+            "results_dir": "Resultados\\cnn_shallow\\2026-05-30_16-30-16_017307",
+            "metrics": {
+                "accuracy": 0.68946474086661,
+                "precision": 0.712984473547704,
+                "recall": 0.68946474086661,
+                "f1": 0.6750133278490624
+            },
+            "class_names": [
+                "galaxy",
+                "quasar",
+                "star"
+            ]
+        },
+        {
+            "name": "efficientnet_b0",
+            "model_key": "efficientnet",
+            "run_index": 3,
+            "seed": 44,
+            "results_dir": "Resultados\\efficientnet_b0\\2026-05-30_17-16-32_337353",
+            "metrics": {
+                "accuracy": 0.8547153780798641,
+                "precision": 0.8586563334158357,
+                "recall": 0.8547153780798641,
+                "f1": 0.8524293867124391
+            },
+            "class_names": [
+                "galaxy",
+                "quasar",
+                "star"
+            ]
+        },
+        {
+            "name": "resnet50",
+            "model_key": "resnet",
+            "run_index": 3,
+            "seed": 44,
+            "results_dir": "Resultados\\resnet50\\2026-05-30_17-31-58_810149",
+            "metrics": {
+                "accuracy": 0.8959218351741717,
+                "precision": 0.8989151777974614,
+                "recall": 0.8959218351741717,
+                "f1": 0.8964180520299395
+            },
+            "class_names": [
+                "galaxy",
+                "quasar",
+                "star"
+            ]
+        },
+        {
+            "name": "convnext_tiny",
+            "model_key": "convnext",
+            "run_index": 3,
+            "seed": 44,
+            "results_dir": "Resultados\\convnext_tiny\\2026-05-30_17-57-20_227201",
+            "metrics": {
+                "accuracy": 0.846644010195412,
+                "precision": 0.857279946073266,
+                "recall": 0.846644010195412,
+                "f1": 0.8454507545457908
+            },
+            "class_names": [
+                "galaxy",
+                "quasar",
+                "star"
+            ]
+        },
+        {
+            "name": "vit_b_16",
+            "model_key": "vit",
+            "run_index": 3,
+            "seed": 44,
+            "results_dir": "Resultados\\vit_b_16\\2026-05-30_18-41-07_798373",
+            "metrics": {
+                "accuracy": 0.8113848768054376,
+                "precision": 0.8201343397236213,
+                "recall": 0.8113848768054376,
+                "f1": 0.8088977214648366
+            },
+            "class_names": [
+                "galaxy",
+                "quasar",
+                "star"
+            ]
+        },
+        {
+            "name": "vmamba",
+            "model_key": "vmamba",
+            "run_index": 3,
+            "seed": 44,
+            "results_dir": "Resultados\\vmamba\\2026-05-30_21-01-10_513814",
+            "metrics": {
+                "accuracy": 0.8887000849617672,
+                "precision": 0.8990431818567691,
+                "recall": 0.8887000849617672,
+                "f1": 0.8889408510228695
+            },
+            "class_names": [
+                "galaxy",
+                "quasar",
+                "star"
+            ]
+        },
+        {
+            "name": "cnn_shallow",
+            "model_key": "cnn_shallow",
+            "run_index": 3,
+            "seed": 44,
+            "results_dir": "Resultados\\cnn_shallow\\2026-05-30_21-53-06_507718",
+            "metrics": {
+                "accuracy": 0.7085811384876806,
+                "precision": 0.7214680892719854,
+                "recall": 0.7085811384876806,
+                "f1": 0.7020304695346976
+            },
+            "class_names": [
+                "galaxy",
+                "quasar",
+                "star"
+            ]
+        },
+        {
+            "name": "efficientnet_b0",
+            "model_key": "efficientnet",
+            "run_index": 4,
+            "seed": 45,
+            "results_dir": "Resultados\\efficientnet_b0\\2026-05-30_23-22-50_986833",
+            "metrics": {
+                "accuracy": 0.8836023789294817,
+                "precision": 0.883123217775774,
+                "recall": 0.8836023789294817,
+                "f1": 0.8824446865500102
+            },
+            "class_names": [
+                "galaxy",
+                "quasar",
+                "star"
+            ]
+        },
+        {
+            "name": "resnet50",
+            "model_key": "resnet",
+            "run_index": 4,
+            "seed": 45,
+            "results_dir": "Resultados\\resnet50\\2026-05-30_23-39-00_619757",
+            "metrics": {
+                "accuracy": 0.8865760407816483,
+                "precision": 0.8860267625298234,
+                "recall": 0.8865760407816483,
+                "f1": 0.8859552550784405
+            },
+            "class_names": [
+                "galaxy",
+                "quasar",
+                "star"
+            ]
+        },
+        {
+            "name": "convnext_tiny",
+            "model_key": "convnext",
+            "run_index": 4,
+            "seed": 45,
+            "results_dir": "Resultados\\convnext_tiny\\2026-05-31_00-03-11_350833",
+            "metrics": {
+                "accuracy": 0.8695836873406967,
+                "precision": 0.8739363576546728,
+                "recall": 0.8695836873406967,
+                "f1": 0.8694505383976832
+            },
+            "class_names": [
+                "galaxy",
+                "quasar",
+                "star"
+            ]
+        },
+        {
+            "name": "vit_b_16",
+            "model_key": "vit",
+            "run_index": 4,
+            "seed": 45,
+            "results_dir": "Resultados\\vit_b_16\\2026-05-31_00-46-31_373108",
+            "metrics": {
+                "accuracy": 0.8113848768054376,
+                "precision": 0.8089572516398441,
+                "recall": 0.8113848768054376,
+                "f1": 0.8089283151488688
+            },
+            "class_names": [
+                "galaxy",
+                "quasar",
+                "star"
+            ]
+        },
+        {
+            "name": "vmamba",
+            "model_key": "vmamba",
+            "run_index": 4,
+            "seed": 45,
+            "results_dir": "Resultados\\vmamba\\2026-05-31_02-18-59_024952",
+            "metrics": {
+                "accuracy": 0.8708581138487681,
+                "precision": 0.8818686323639384,
+                "recall": 0.8708581138487681,
+                "f1": 0.871287285986333
+            },
+            "class_names": [
+                "galaxy",
+                "quasar",
+                "star"
+            ]
+        },
+        {
+            "name": "cnn_shallow",
+            "model_key": "cnn_shallow",
+            "run_index": 4,
+            "seed": 45,
+            "results_dir": "Resultados\\cnn_shallow\\2026-05-31_03-07-01_364312",
+            "metrics": {
+                "accuracy": 0.7017841971112999,
+                "precision": 0.7118608100184832,
+                "recall": 0.7017841971112999,
+                "f1": 0.6927306275911307
+            },
+            "class_names": [
+                "galaxy",
+                "quasar",
+                "star"
+            ]
+        },
+        {
+            "name": "efficientnet_b0",
+            "model_key": "efficientnet",
+            "run_index": 5,
+            "seed": 46,
+            "results_dir": "Resultados\\efficientnet_b0\\2026-05-31_03-58-03_167258",
+            "metrics": {
+                "accuracy": 0.8644859813084113,
+                "precision": 0.8695708727843788,
+                "recall": 0.8644859813084113,
+                "f1": 0.8643435902352742
+            },
+            "class_names": [
+                "galaxy",
+                "quasar",
+                "star"
+            ]
+        },
+        {
+            "name": "resnet50",
+            "model_key": "resnet",
+            "run_index": 5,
+            "seed": 46,
+            "results_dir": "Resultados\\resnet50\\2026-05-31_04-13-23_943890",
+            "metrics": {
+                "accuracy": 0.8491928632115548,
+                "precision": 0.8677991608821158,
+                "recall": 0.8491928632115548,
+                "f1": 0.8458944300383865
+            },
+            "class_names": [
+                "galaxy",
+                "quasar",
+                "star"
+            ]
+        },
+        {
+            "name": "convnext_tiny",
+            "model_key": "convnext",
+            "run_index": 5,
+            "seed": 46,
+            "results_dir": "Resultados\\convnext_tiny\\2026-05-31_04-37-41_019623",
+            "metrics": {
+                "accuracy": 0.8228547153780799,
+                "precision": 0.8435423128350221,
+                "recall": 0.8228547153780799,
+                "f1": 0.8197745379776028
+            },
+            "class_names": [
+                "galaxy",
+                "quasar",
+                "star"
+            ]
+        },
+        {
+            "name": "vit_b_16",
+            "model_key": "vit",
+            "run_index": 5,
+            "seed": 46,
+            "results_dir": "Resultados\\vit_b_16\\2026-05-31_05-17-25_507906",
+            "metrics": {
+                "accuracy": 0.8215802888700084,
+                "precision": 0.8248751243354,
+                "recall": 0.8215802888700084,
+                "f1": 0.8206830766507772
+            },
+            "class_names": [
+                "galaxy",
+                "quasar",
+                "star"
+            ]
+        },
+        {
+            "name": "vmamba",
+            "model_key": "vmamba",
+            "run_index": 5,
+            "seed": 46,
+            "results_dir": "Resultados\\vmamba\\2026-05-31_07-10-23_458319",
+            "metrics": {
+                "accuracy": 0.3453695836873407,
+                "precision": 0.20723105985285345,
+                "recall": 0.3453695836873407,
+                "f1": 0.17800882514871819
+            },
+            "class_names": [
+                "galaxy",
+                "quasar",
+                "star"
+            ]
+        },
+        {
+            "name": "cnn_shallow",
+            "model_key": "cnn_shallow",
+            "run_index": 5,
+            "seed": 46,
+            "results_dir": "Resultados\\cnn_shallow\\2026-05-31_08-42-22_297937",
+            "metrics": {
+                "accuracy": 0.6915887850467289,
+                "precision": 0.7061435149315243,
+                "recall": 0.6915887850467289,
+                "f1": 0.6765617422904806
+            },
+            "class_names": [
+                "galaxy",
+                "quasar",
+                "star"
+            ]
+        }
+    ],
+    "ensemble_runs": [
+        {
+            "name": "majority_vote",
+            "run_index": 1,
+            "results_dir": "Resultados\\ensemble\\2026-05-31_09-24-19_351813\\run_1\\majority_vote",
+            "metrics": {
+                "accuracy": 0.8819031435853866,
+                "precision": 0.8889216862266142,
+                "recall": 0.8819031435853866,
+                "f1": 0.8810839762176607
+            }
+        },
+        {
+            "name": "mean_probability",
+            "run_index": 1,
+            "results_dir": "Resultados\\ensemble\\2026-05-31_09-24-19_351813\\run_1\\mean_probability",
+            "metrics": {
+                "accuracy": 0.897196261682243,
+                "precision": 0.897897291338063,
+                "recall": 0.897196261682243,
+                "f1": 0.8966154948185697
+            }
+        },
+        {
+            "name": "majority_vote",
+            "run_index": 2,
+            "results_dir": "Resultados\\ensemble\\2026-05-31_09-24-19_351813\\run_2\\majority_vote",
+            "metrics": {
+                "accuracy": 0.8700084961767205,
+                "precision": 0.8746109218196391,
+                "recall": 0.8700084961767205,
+                "f1": 0.8690397033869947
+            }
+        },
+        {
+            "name": "mean_probability",
+            "run_index": 2,
+            "results_dir": "Resultados\\ensemble\\2026-05-31_09-24-19_351813\\run_2\\mean_probability",
+            "metrics": {
+                "accuracy": 0.881053525913339,
+                "precision": 0.8820632039528963,
+                "recall": 0.881053525913339,
+                "f1": 0.8802304768796597
+            }
+        },
+        {
+            "name": "majority_vote",
+            "run_index": 3,
+            "results_dir": "Resultados\\ensemble\\2026-05-31_09-24-19_351813\\run_3\\majority_vote",
+            "metrics": {
+                "accuracy": 0.8785046728971962,
+                "precision": 0.8847615428384921,
+                "recall": 0.8785046728971962,
+                "f1": 0.8776668025844515
+            }
+        },
+        {
+            "name": "mean_probability",
+            "run_index": 3,
+            "results_dir": "Resultados\\ensemble\\2026-05-31_09-24-19_351813\\run_3\\mean_probability",
+            "metrics": {
+                "accuracy": 0.8976210705182668,
+                "precision": 0.8994290857965836,
+                "recall": 0.8976210705182668,
+                "f1": 0.8972132228616322
+            }
+        },
+        {
+            "name": "majority_vote",
+            "run_index": 4,
+            "results_dir": "Resultados\\ensemble\\2026-05-31_09-24-19_351813\\run_4\\majority_vote",
+            "metrics": {
+                "accuracy": 0.887000849617672,
+                "precision": 0.8900642073455963,
+                "recall": 0.887000849617672,
+                "f1": 0.8862780906945474
+            }
+        },
+        {
+            "name": "mean_probability",
+            "run_index": 4,
+            "results_dir": "Resultados\\ensemble\\2026-05-31_09-24-19_351813\\run_4\\mean_probability",
+            "metrics": {
+                "accuracy": 0.907391673746814,
+                "precision": 0.9077535049216748,
+                "recall": 0.907391673746814,
+                "f1": 0.9070449160949384
+            }
+        },
+        {
+            "name": "majority_vote",
+            "run_index": 5,
+            "results_dir": "Resultados\\ensemble\\2026-05-31_09-24-19_351813\\run_5\\majority_vote",
+            "metrics": {
+                "accuracy": 0.8483432455395072,
+                "precision": 0.8587685578675944,
+                "recall": 0.8483432455395072,
+                "f1": 0.8455033417136976
+            }
+        },
+        {
+            "name": "mean_probability",
+            "run_index": 5,
+            "results_dir": "Resultados\\ensemble\\2026-05-31_09-24-19_351813\\run_5\\mean_probability",
+            "metrics": {
+                "accuracy": 0.8657604078164826,
+                "precision": 0.8747367964127287,
+                "recall": 0.8657604078164826,
+                "f1": 0.8647135067181054
+            }
+        }
+    ]
+}

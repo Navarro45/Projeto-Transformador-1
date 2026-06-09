@@ -1,0 +1,20 @@
+{
+    "strategy": "mean_probability",
+    "run_index": 4,
+    "models": [
+        "efficientnet_b0",
+        "resnet50",
+        "convnext_tiny",
+        "vit_b_16",
+        "vmamba",
+        "cnn_shallow"
+    ],
+    "source_results_dirs": [
+        "Resultados\\efficientnet_b0\\2026-05-30_23-22-50_986833",
+        "Resultados\\resnet50\\2026-05-30_23-39-00_619757",
+        "Resultados\\convnext_tiny\\2026-05-31_00-03-11_350833",
+        "Resultados\\vit_b_16\\2026-05-31_00-46-31_373108",
+        "Resultados\\vmamba\\2026-05-31_02-18-59_024952",
+        "Resultados\\cnn_shallow\\2026-05-31_03-07-01_364312"
+    ]
+}

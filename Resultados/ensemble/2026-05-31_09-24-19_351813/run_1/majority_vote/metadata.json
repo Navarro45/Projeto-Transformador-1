@@ -1,0 +1,20 @@
+{
+    "strategy": "majority_vote",
+    "run_index": 1,
+    "models": [
+        "efficientnet_b0",
+        "resnet50",
+        "convnext_tiny",
+        "vit_b_16",
+        "vmamba",
+        "cnn_shallow"
+    ],
+    "source_results_dirs": [
+        "Resultados\\efficientnet_b0\\2026-05-30_06-50-27_689068",
+        "Resultados\\resnet50\\2026-05-30_07-05-59_968857",
+        "Resultados\\convnext_tiny\\2026-05-30_07-29-24_567436",
+        "Resultados\\vit_b_16\\2026-05-30_08-12-46_873109",
+        "Resultados\\vmamba\\2026-05-30_09-55-35_863713",
+        "Resultados\\cnn_shallow\\2026-05-30_11-24-25_916357"
+    ]
+}

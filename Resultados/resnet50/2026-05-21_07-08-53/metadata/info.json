@@ -1,0 +1,17 @@
+{
+    "model": "resnet",
+    "epochs": 200,
+    "batch_size": 16,
+    "learning_rate": 0.0001,
+    "img_size": 224,
+    "early_stopping_patience": 20,
+    "early_stopping_min_delta": 0.0001,
+    "scheduler": "ReduceLROnPlateau",
+    "scheduler_patience": 8,
+    "scheduler_factor": 0.5,
+    "scheduler_min_lr": 1e-07,
+    "max_train_images": null,
+    "max_validation_images": null,
+    "max_test_images": null,
+    "device": "cuda"
+}
