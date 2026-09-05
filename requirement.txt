@@ -8,7 +8,12 @@ opencv-python
 pillow
 tqdm
 scikit-learn
+joblib
 timm
 pandas
 h5py
 grad-cam
+astropy
+astroquery
+hdbscan
+requests

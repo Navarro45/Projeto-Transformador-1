@@ -4,6 +4,10 @@ from .convNeXt_modelo import ConvNeXtModel
 from .vit_modelo import ViTModel
 from .visionMamba_modelo import VisionMambaModel
 from .cnn_shallow_modelo import CNNShallowModel
+from .random_forest_modelo import (
+    FlatRandomForestModel,
+    HierarchicalRandomForestModel,
+)
 
 class ModelFactory:
 
@@ -15,6 +19,12 @@ class ModelFactory:
         "vit": ViTModel,
         "vmamba": VisionMambaModel,
         "cnn_shallow": CNNShallowModel,
+    }
+
+    SKLEARN_MODELS = {
+
+        "flat_random_forest": FlatRandomForestModel,
+        "hierarchical_random_forest": HierarchicalRandomForestModel,
     }
 
     @staticmethod
@@ -36,5 +46,30 @@ class ModelFactory:
             ModelFactory.MODELS[model_name](
                 num_classes,
                 device
+            )
+        )
+
+    @staticmethod
+    def is_sklearn_model(model_name):
+
+        return model_name in ModelFactory.SKLEARN_MODELS
+
+    @staticmethod
+    def create_sklearn(
+        model_name,
+        config=None
+    ):
+
+        if model_name not in (
+            ModelFactory.SKLEARN_MODELS
+        ):
+
+            raise ValueError(
+                f"Modelo sklearn {model_name} nao suportado"
+            )
+
+        return (
+            ModelFactory.SKLEARN_MODELS[model_name](
+                config
             )
         )
