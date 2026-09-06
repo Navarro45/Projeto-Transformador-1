@@ -1,0 +1,2 @@
+model,parent_accuracy,leaf_accuracy,macro_f1,weighted_f1,hierarchical_loss,hierarchical_distance,cross_parent_errors,same_parent_errors
+flat_random_forest,0.5909090909090909,0.13636363636363635,0.034188034188034185,0.07575757575757575,16.038363687073556,2.5,9,10

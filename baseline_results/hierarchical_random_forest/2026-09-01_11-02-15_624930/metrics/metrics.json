@@ -1,0 +1,312 @@
+{
+    "model": "hierarchical_random_forest",
+    "config": {
+        "n_estimators": 8,
+        "criterion": "gini",
+        "max_depth": null,
+        "min_samples_split": 2,
+        "min_samples_leaf": 1,
+        "max_features": "sqrt",
+        "bootstrap": true,
+        "class_weight": "balanced_subsample",
+        "max_samples": null,
+        "random_state": 42,
+        "n_jobs": 1,
+        "prediction_mode": "global_probability"
+    },
+    "splits": {
+        "train": 79,
+        "test": 22,
+        "validation": 19
+    },
+    "classes": {
+        "parents": [
+            "A",
+            "CARBON",
+            "CV",
+            "F",
+            "G",
+            "K",
+            "L",
+            "M",
+            "OB",
+            "T",
+            "WD"
+        ],
+        "leaf_labels": [
+            "A0",
+            "A4",
+            "A6",
+            "A8",
+            "A9",
+            "CARBON",
+            "CV",
+            "F0",
+            "F2",
+            "F3",
+            "F5",
+            "F8",
+            "F9",
+            "G0",
+            "G1",
+            "G2",
+            "G4",
+            "G5",
+            "G8",
+            "K0",
+            "K1",
+            "K3",
+            "K4",
+            "K5",
+            "K7",
+            "L1",
+            "L5.5",
+            "L9",
+            "M0",
+            "M1",
+            "M2",
+            "M3",
+            "M4",
+            "M4.5",
+            "M5",
+            "M7",
+            "OB",
+            "T2",
+            "WD"
+        ]
+    },
+    "metrics_by_model": {
+        "hierarchical_random_forest": {
+            "train": {
+                "parent": {
+                    "status": "ok",
+                    "accuracy": 0.9873417721518988,
+                    "balanced_accuracy": 0.98989898989899,
+                    "precision_macro": 0.997067448680352,
+                    "recall_macro": 0.98989898989899,
+                    "f1_macro": 0.9931620934513895,
+                    "f1_weighted": 0.987073227298805,
+                    "log_loss": 0.2369153358162304
+                },
+                "leaf": {
+                    "status": "ok",
+                    "accuracy": 0.9367088607594937,
+                    "balanced_accuracy": 0.8923076923076922,
+                    "precision_macro": 0.8632478632478632,
+                    "recall_macro": 0.8923076923076922,
+                    "f1_macro": 0.8739360478490914,
+                    "f1_weighted": 0.915786531086476,
+                    "log_loss": 0.9684804433090082
+                },
+                "hierarchical": {
+                    "exact_match": 74,
+                    "same_parent_error": 4,
+                    "cross_parent_error": 1,
+                    "exact_match_pct": 93.67088607594937,
+                    "same_parent_error_pct": 5.063291139240507,
+                    "cross_parent_error_pct": 1.2658227848101267,
+                    "average_hierarchical_distance": 0.1518987341772152,
+                    "alpha": 0.35,
+                    "parent_log_loss": 0.2369153358162304,
+                    "leaf_log_loss": 0.9684804433090082,
+                    "hierarchical_loss": 0.712432655686536,
+                    "parent_leaf_consistency": 1.0
+                }
+            },
+            "validation": {
+                "parent": {
+                    "status": "ok",
+                    "accuracy": 0.631578947368421,
+                    "balanced_accuracy": 0.5499999999999999,
+                    "precision_macro": 0.29090909090909095,
+                    "recall_macro": 0.3,
+                    "f1_macro": 0.289485766758494,
+                    "f1_weighted": 0.6298511430090377,
+                    "log_loss": 9.50486333695954
+                },
+                "leaf": {
+                    "status": "ok",
+                    "accuracy": 0.15789473684210525,
+                    "balanced_accuracy": 0.16666666666666666,
+                    "precision_macro": 0.03205128205128205,
+                    "recall_macro": 0.07692307692307693,
+                    "f1_macro": 0.044444444444444446,
+                    "f1_weighted": 0.0912280701754386,
+                    "log_loss": 13.873549385494163
+                },
+                "hierarchical": {
+                    "exact_match": 3,
+                    "same_parent_error": 9,
+                    "cross_parent_error": 7,
+                    "exact_match_pct": 15.789473684210526,
+                    "same_parent_error_pct": 47.368421052631575,
+                    "cross_parent_error_pct": 36.84210526315789,
+                    "average_hierarchical_distance": 2.3157894736842106,
+                    "alpha": 0.35,
+                    "parent_log_loss": 9.50486333695954,
+                    "leaf_log_loss": 13.873549385494163,
+                    "hierarchical_loss": 12.344509268507045,
+                    "parent_leaf_consistency": 1.0
+                }
+            },
+            "test": {
+                "parent": {
+                    "status": "ok",
+                    "accuracy": 0.5909090909090909,
+                    "balanced_accuracy": 0.3904761904761905,
+                    "precision_macro": 0.2878787878787879,
+                    "recall_macro": 0.2484848484848485,
+                    "f1_macro": 0.25252525252525254,
+                    "f1_weighted": 0.5656565656565656,
+                    "log_loss": 5.320910366222248
+                },
+                "leaf": {
+                    "status": "ok",
+                    "accuracy": 0.13636363636363635,
+                    "balanced_accuracy": 0.09523809523809523,
+                    "precision_macro": 0.020146520146520148,
+                    "recall_macro": 0.05128205128205128,
+                    "f1_macro": 0.02849002849002849,
+                    "f1_weighted": 0.0707070707070707,
+                    "log_loss": 9.320482937981428
+                },
+                "hierarchical": {
+                    "exact_match": 3,
+                    "same_parent_error": 10,
+                    "cross_parent_error": 9,
+                    "exact_match_pct": 13.636363636363635,
+                    "same_parent_error_pct": 45.45454545454545,
+                    "cross_parent_error_pct": 40.909090909090914,
+                    "average_hierarchical_distance": 2.5,
+                    "alpha": 0.35,
+                    "parent_log_loss": 5.320910366222248,
+                    "leaf_log_loss": 9.320482937981428,
+                    "hierarchical_loss": 7.920632537865715,
+                    "parent_leaf_consistency": 1.0
+                }
+            }
+        },
+        "flat_random_forest": {
+            "train": {
+                "parent": {
+                    "status": "ok",
+                    "accuracy": 0.9620253164556962,
+                    "balanced_accuracy": 0.9751410205955661,
+                    "precision_macro": 0.9787019757694245,
+                    "recall_macro": 0.9751410205955661,
+                    "f1_macro": 0.9767772107563464,
+                    "f1_weighted": 0.9618946607948475,
+                    "log_loss": 0.2614012541058704
+                },
+                "leaf": {
+                    "status": "ok",
+                    "accuracy": 0.9493670886075949,
+                    "balanced_accuracy": 0.9166666666666666,
+                    "precision_macro": 0.8888888888888888,
+                    "recall_macro": 0.9166666666666666,
+                    "f1_macro": 0.8975420714551149,
+                    "f1_weighted": 0.9348743349844064,
+                    "log_loss": 0.4209297386529009
+                },
+                "hierarchical": {
+                    "exact_match": 75,
+                    "same_parent_error": 1,
+                    "cross_parent_error": 3,
+                    "exact_match_pct": 94.9367088607595,
+                    "same_parent_error_pct": 1.2658227848101267,
+                    "cross_parent_error_pct": 3.79746835443038,
+                    "average_hierarchical_distance": 0.17721518987341772,
+                    "alpha": 0.35,
+                    "parent_log_loss": 0.2614012541058704,
+                    "leaf_log_loss": 0.4209297386529009,
+                    "hierarchical_loss": 0.3650947690614402,
+                    "parent_leaf_consistency": 1.0
+                }
+            },
+            "validation": {
+                "parent": {
+                    "status": "ok",
+                    "accuracy": 0.631578947368421,
+                    "balanced_accuracy": 0.49444444444444446,
+                    "precision_macro": 0.24285714285714288,
+                    "recall_macro": 0.2696969696969697,
+                    "f1_macro": 0.2503885003885004,
+                    "f1_weighted": 0.5993027440395862,
+                    "log_loss": 4.493271501909972
+                },
+                "leaf": {
+                    "status": "ok",
+                    "accuracy": 0.21052631578947367,
+                    "balanced_accuracy": 0.2222222222222222,
+                    "precision_macro": 0.06495726495726496,
+                    "recall_macro": 0.10256410256410256,
+                    "f1_macro": 0.07264957264957264,
+                    "f1_weighted": 0.14912280701754385,
+                    "log_loss": 20.60200572095015
+                },
+                "hierarchical": {
+                    "exact_match": 4,
+                    "same_parent_error": 8,
+                    "cross_parent_error": 7,
+                    "exact_match_pct": 21.052631578947366,
+                    "same_parent_error_pct": 42.10526315789473,
+                    "cross_parent_error_pct": 36.84210526315789,
+                    "average_hierarchical_distance": 2.263157894736842,
+                    "alpha": 0.35,
+                    "parent_log_loss": 4.493271501909972,
+                    "leaf_log_loss": 20.60200572095015,
+                    "hierarchical_loss": 14.963948744286089,
+                    "parent_leaf_consistency": 1.0
+                }
+            },
+            "test": {
+                "parent": {
+                    "status": "ok",
+                    "accuracy": 0.5909090909090909,
+                    "balanced_accuracy": 0.3952380952380952,
+                    "precision_macro": 0.2424242424242424,
+                    "recall_macro": 0.2515151515151515,
+                    "f1_macro": 0.24432638069001705,
+                    "f1_weighted": 0.5686081595172504,
+                    "log_loss": 6.8622816269262605
+                },
+                "leaf": {
+                    "status": "ok",
+                    "accuracy": 0.13636363636363635,
+                    "balanced_accuracy": 0.11904761904761904,
+                    "precision_macro": 0.0235042735042735,
+                    "recall_macro": 0.0641025641025641,
+                    "f1_macro": 0.034188034188034185,
+                    "f1_weighted": 0.07575757575757575,
+                    "log_loss": 20.97933095022979
+                },
+                "hierarchical": {
+                    "exact_match": 3,
+                    "same_parent_error": 10,
+                    "cross_parent_error": 9,
+                    "exact_match_pct": 13.636363636363635,
+                    "same_parent_error_pct": 45.45454545454545,
+                    "cross_parent_error_pct": 40.909090909090914,
+                    "average_hierarchical_distance": 2.5,
+                    "alpha": 0.35,
+                    "parent_log_loss": 6.8622816269262605,
+                    "leaf_log_loss": 20.97933095022979,
+                    "hierarchical_loss": 16.038363687073556,
+                    "parent_leaf_consistency": 1.0
+                }
+            }
+        }
+    },
+    "timings": {
+        "feature_time_seconds": 0.06496540000080131,
+        "split_time_seconds": 0.008031199999095406,
+        "training_time_seconds": 0.08132169999589678,
+        "evaluation_time_seconds": 0.9902322999987518
+    },
+    "cache": {
+        "cache_hit": true,
+        "features_path": "dataset\\star_supervised\\cache\\spectral_features_d4af38ea59606b58.npz",
+        "metadata_path": "dataset\\star_supervised\\cache\\spectral_features_d4af38ea59606b58.csv",
+        "failures_path": "dataset\\star_supervised\\cache\\spectral_features_d4af38ea59606b58_failures.csv"
+    }
+}

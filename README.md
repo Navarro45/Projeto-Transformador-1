@@ -46,6 +46,127 @@ dataset/
 
 Os fluxos baseados em imagens continuam esperando o padrao `torchvision.datasets.ImageFolder` quando forem treinados. Quando os splits de imagem forem materializados, eles devem ficar sob `dataset/train`, `dataset/val` e `dataset/test`, mantendo as pastas `galaxy`, `quasar` e `star` em cada split.
 
+## Integracao Gaia DR3 x SDSS Local
+
+O projeto tambem possui uma camada nova para cruzar os objetos SDSS ja existentes localmente com o catalogo Gaia DR3. Essa etapa nao baixa novamente imagens, espectros, arquivos FITS ou catalogos SDSS; ela reutiliza os dados ja materializados em `dataset/`.
+
+Fonte local usada por padrao:
+
+```text
+dataset/metadata/spectra_metadata.csv
+dataset/manifests/download_manifest.csv
+```
+
+O manifesto e usado para recuperar RA/DEC quando o indice espectral nao traz essas colunas diretamente. Se algum identificador Gaia ja existir no dataset local, ele e detectado e registrado, mas o fluxo padrao consulta apenas objetos ainda nao cacheados. Por padrao, a integracao Gaia consulta somente objetos `STAR`, preservando `GALAXY` e `QSO` no dataset SDSS local sem usa-los nessa etapa.
+
+Executar a integracao Gaia:
+
+```bash
+python scripts/gaia_sdss_integration.py
+```
+
+Teste pequeno:
+
+```bash
+python scripts/gaia_sdss_integration.py --limit 20
+```
+
+Reconsultar apenas erros anteriores do cache:
+
+```bash
+python scripts/gaia_sdss_integration.py --retry-errors
+```
+
+Diagnosticar conexao com consultas individuais:
+
+```bash
+python scripts/gaia_sdss_integration.py --limit 20 --batch-size 1 --no-batch --retry-errors
+```
+
+Expandir para outras classes, quando necessario:
+
+```bash
+python scripts/gaia_sdss_integration.py --classes GALAXY QSO STAR
+```
+
+Gerar novamente apenas relatorios, sem consultar Gaia:
+
+```bash
+python scripts/gaia_sdss_integration.py --generate-reports-only
+```
+
+Parametros principais:
+
+| Parametro | Descricao | Padrao |
+| --- | --- | --- |
+| `--input` | Dataset local consolidado ja existente | `dataset/metadata/spectra_metadata.csv` |
+| `--manifest` | Manifesto com RA/DEC e caminhos locais | `dataset/manifests/download_manifest.csv` |
+| `--output` | Diretorio da camada Gaia | `dataset/gaia_sdss` |
+| `--match-radius-arcsec` | Raio de busca posicional no Gaia, em arcsec | `1.0` |
+| `--ambiguity-delta-arcsec` | Diferenca maxima entre primeiro e segundo candidato para marcar ambiguidade | `0.2` |
+| `--classes` | Classes SDSS usadas na consulta Gaia | `STAR` |
+| `--batch-size` | Tamanho dos lotes de consulta TAP | `50` |
+| `--retry-errors` | Reconsulta apenas objetos selecionados com `match_status=ERROR` no cache | desativado |
+| `--force` | Reconsulta todos os objetos selecionados, preservando cache de outras classes | desativado |
+| `--no-batch` | Usa consultas individuais, util para diagnostico de conexao | desativado |
+| `--generate-reports-only` | Regera metricas, graficos e relatorios do dataset consolidado | desativado |
+
+Saidas geradas:
+
+```text
+dataset/gaia_sdss/cache/gaia_matches.csv
+dataset/gaia_sdss/gaia_sdss_comparison.csv
+dataset/gaia_sdss/reports/gaia_sdss_report.md
+dataset/gaia_sdss/reports/*.csv
+dataset/gaia_sdss/reports/summary.json
+dataset/gaia_sdss/plots/*.png
+```
+
+A classe `gaia_derived_class` e derivada de `teff_gspphot` quando Gaia fornece temperatura efetiva. Ela deve ser interpretada como uma derivacao fotometrica/astrofisica, nao como uma subclassificacao espectral observacional. O relatorio tambem registra status de match, distancias angulares, candidatos ambiguos, cobertura dos parametros Gaia e possiveis efeitos de movimento proprio elevado.
+
+### Classe Evolutiva/Fisica Das Estrelas
+
+Para a classe `STAR`, o dataset consolidado tambem cria anotacoes derivadas para apoiar comparacoes mais interpretaveis que a classe romana tradicional. Os campos principais sao:
+
+```text
+spectral_subclass_raw
+spectral_class_major
+roman_luminosity_class_raw
+stellar_evolution_class
+stellar_evolution_method
+stellar_evolution_status
+absolute_g_mag
+parallax_quality_flag
+```
+
+`stellar_evolution_class` pode assumir valores como `WHITE_DWARF`, `MAIN_SEQUENCE_DWARF`, `RED_GIANT`, `GIANT`, `SUBGIANT` e `UNKNOWN`. Essa classe e derivada de dados Gaia quando disponiveis, usando principalmente `teff_gspphot`, `bp_rp`, `phot_g_mean_mag`, `parallax`, `parallax_error` e `logg_gspphot`. Se o Gaia falhar ou a paralaxe estiver ausente/invalida, a estrela permanece no dataset com `stellar_evolution_class=UNKNOWN`.
+
+Gerar a estrutura por objeto sem duplicar imagens e plots:
+
+```bash
+python scripts/build_star_object_dataset.py
+```
+
+Gerar a estrutura por objeto copiando imagem RGB e plot espectral:
+
+```bash
+python scripts/build_star_object_dataset.py --copy-assets
+```
+
+Saida por objeto:
+
+```text
+dataset/star_objects/STAR_000001/
+  RGB/metadata.json
+  Spectrogram/metadata.json
+  Photometric/photometric.json
+  Physical/physical.json
+  Target/target.json
+  object.json
+```
+
+Por padrao, essa estrutura armazena caminhos para os arquivos ja existentes no projeto. Nenhum FITS, imagem ou espectro SDSS e baixado novamente.
+
 ## Arquiteturas Avaliadas
 
 As arquiteturas sao centralizadas em `models/model_factory.py` e podem ser selecionadas pela linha de comando:
@@ -77,6 +198,7 @@ O comando `--model all` executa o pipeline para todos os modelos registrados.
 +-- utils/                          # Gerenciamento de resultados
 +-- logs/                           # Registros de execucao
 +-- Resultados/                     # Modelos, metricas, graficos e relatorios gerados
++-- baseline_results/               # Copia leve dos resultados Random Forest para relatorio
 ```
 
 ## Dependencias
@@ -411,127 +533,6 @@ A pasta `Resultados/` contem arquivos consolidados e relatorios gerados a partir
 
 Esses artefatos sao importantes para documentar a metodologia experimental e sustentar a comparacao entre arquiteturas no texto academico.
 
-## Integracao Gaia DR3 x SDSS Local
-
-O projeto tambem possui uma camada nova para cruzar os objetos SDSS ja existentes localmente com o catalogo Gaia DR3. Essa etapa nao baixa novamente imagens, espectros, arquivos FITS ou catalogos SDSS; ela reutiliza os dados ja materializados em `dataset/`.
-
-Fonte local usada por padrao:
-
-```text
-dataset/metadata/spectra_metadata.csv
-dataset/manifests/download_manifest.csv
-```
-
-O manifesto e usado para recuperar RA/DEC quando o indice espectral nao traz essas colunas diretamente. Se algum identificador Gaia ja existir no dataset local, ele e detectado e registrado, mas o fluxo padrao consulta apenas objetos ainda nao cacheados. Por padrao, a integracao Gaia consulta somente objetos `STAR`, preservando `GALAXY` e `QSO` no dataset SDSS local sem usa-los nessa etapa.
-
-Executar a integracao Gaia:
-
-```bash
-python scripts/gaia_sdss_integration.py
-```
-
-Teste pequeno:
-
-```bash
-python scripts/gaia_sdss_integration.py --limit 20
-```
-
-Reconsultar apenas erros anteriores do cache:
-
-```bash
-python scripts/gaia_sdss_integration.py --retry-errors
-```
-
-Diagnosticar conexao com consultas individuais:
-
-```bash
-python scripts/gaia_sdss_integration.py --limit 20 --batch-size 1 --no-batch --retry-errors
-```
-
-Expandir para outras classes, quando necessario:
-
-```bash
-python scripts/gaia_sdss_integration.py --classes GALAXY QSO STAR
-```
-
-Gerar novamente apenas relatorios, sem consultar Gaia:
-
-```bash
-python scripts/gaia_sdss_integration.py --generate-reports-only
-```
-
-Parametros principais:
-
-| Parametro | Descricao | Padrao |
-| --- | --- | --- |
-| `--input` | Dataset local consolidado ja existente | `dataset/metadata/spectra_metadata.csv` |
-| `--manifest` | Manifesto com RA/DEC e caminhos locais | `dataset/manifests/download_manifest.csv` |
-| `--output` | Diretorio da camada Gaia | `dataset/gaia_sdss` |
-| `--match-radius-arcsec` | Raio de busca posicional no Gaia, em arcsec | `1.0` |
-| `--ambiguity-delta-arcsec` | Diferenca maxima entre primeiro e segundo candidato para marcar ambiguidade | `0.2` |
-| `--classes` | Classes SDSS usadas na consulta Gaia | `STAR` |
-| `--batch-size` | Tamanho dos lotes de consulta TAP | `50` |
-| `--retry-errors` | Reconsulta apenas objetos selecionados com `match_status=ERROR` no cache | desativado |
-| `--force` | Reconsulta todos os objetos selecionados, preservando cache de outras classes | desativado |
-| `--no-batch` | Usa consultas individuais, util para diagnostico de conexao | desativado |
-| `--generate-reports-only` | Regera metricas, graficos e relatorios do dataset consolidado | desativado |
-
-Saidas geradas:
-
-```text
-dataset/gaia_sdss/cache/gaia_matches.csv
-dataset/gaia_sdss/gaia_sdss_comparison.csv
-dataset/gaia_sdss/reports/gaia_sdss_report.md
-dataset/gaia_sdss/reports/*.csv
-dataset/gaia_sdss/reports/summary.json
-dataset/gaia_sdss/plots/*.png
-```
-
-A classe `gaia_derived_class` e derivada de `teff_gspphot` quando Gaia fornece temperatura efetiva. Ela deve ser interpretada como uma derivacao fotometrica/astrofisica, nao como uma subclassificacao espectral observacional. O relatorio tambem registra status de match, distancias angulares, candidatos ambiguos, cobertura dos parametros Gaia e possiveis efeitos de movimento proprio elevado.
-
-### Classe Evolutiva/Fisica Das Estrelas
-
-Para a classe `STAR`, o dataset consolidado tambem cria anotacoes derivadas para apoiar comparacoes mais interpretaveis que a classe romana tradicional. Os campos principais sao:
-
-```text
-spectral_subclass_raw
-spectral_class_major
-roman_luminosity_class_raw
-stellar_evolution_class
-stellar_evolution_method
-stellar_evolution_status
-absolute_g_mag
-parallax_quality_flag
-```
-
-`stellar_evolution_class` pode assumir valores como `WHITE_DWARF`, `MAIN_SEQUENCE_DWARF`, `RED_GIANT`, `GIANT`, `SUBGIANT` e `UNKNOWN`. Essa classe e derivada de dados Gaia quando disponiveis, usando principalmente `teff_gspphot`, `bp_rp`, `phot_g_mean_mag`, `parallax`, `parallax_error` e `logg_gspphot`. Se o Gaia falhar ou a paralaxe estiver ausente/invalida, a estrela permanece no dataset com `stellar_evolution_class=UNKNOWN`.
-
-Gerar a estrutura por objeto sem duplicar imagens e plots:
-
-```bash
-python scripts/build_star_object_dataset.py
-```
-
-Gerar a estrutura por objeto copiando imagem RGB e plot espectral:
-
-```bash
-python scripts/build_star_object_dataset.py --copy-assets
-```
-
-Saida por objeto:
-
-```text
-dataset/star_objects/STAR_000001/
-  RGB/metadata.json
-  Spectrogram/metadata.json
-  Photometric/photometric.json
-  Physical/physical.json
-  Target/target.json
-  object.json
-```
-
-Por padrao, essa estrutura armazena caminhos para os arquivos ja existentes no projeto. Nenhum FITS, imagem ou espectro SDSS e baixado novamente.
-
 ## Hierarchical Random Forest Para Subclasses Estelares
 
 O projeto tambem possui um fluxo supervisionado CPU-first para classificar subclasses estelares usando os espectros SDSS locais de `dataset/star_objects`. O Random Forest e implementado com scikit-learn, mas usa a mesma entrada `main.py` e salva resultados em `Resultados/<modelo>/<timestamp>/`, como os demais experimentos.
@@ -582,6 +583,8 @@ Resultados/hierarchical_random_forest/<timestamp>/
   metadata/rare_classes.csv
   reports/hierarchical_random_forest_report.md
 ```
+
+A pasta `baseline_results/` reune uma copia separada e leve dos resultados `flat_random_forest` e `hierarchical_random_forest`, incluindo metricas, metadados, relatorios, plots e `test_predictions.csv`. Modelos `.joblib` e arrays `.npy/.npz` permanecem apenas em `Resultados/` para evitar duplicacao pesada.
 
 A hierarchical loss e usada para avaliacao e comparacao, nao como funcao de otimizacao por gradiente. Cada `RandomForestClassifier` continua sendo treinado com seu criterio interno (`gini`, `entropy` ou `log_loss`). A estrutura hierarquica entra por classificadores locais, probabilidades condicionais e metricas baseadas no caminho da arvore.
 
