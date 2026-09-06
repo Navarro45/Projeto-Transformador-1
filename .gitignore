@@ -22,6 +22,24 @@ __pycache__/
 *.pth
 *.pt
 *.onnx
+*.joblib
+
+# Dataset ativo e artefatos gerados localmente
+dataset/
+Resultados/
+MyResult_*.csv
+*_spectrum.csv
+*_spectrum.png
+
+# Dataset historico/legado
+legacy/data/
+
+# Artefatos cientificos grandes
+*.fits
+*.fit
+*.fits.gz
+*.npz
+*.npy
 
 # Logs
 *.log

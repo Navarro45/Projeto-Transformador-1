@@ -6,7 +6,7 @@ import random
 
 import torch
 
-from data.data_module import DataModule
+from legacy.data.data_module import DataModule
 
 from evaluation.evaluator import Evaluator
 
@@ -27,6 +27,8 @@ from training.trainer import Trainer
 from shared.metrics import plot_training_history
 
 from utils.result_manager import ResultsManager
+
+from shared.pipelines.spectral_unsupervised import run_spectral_unsupervised
 
 def _optional_limit(value):
 
@@ -337,12 +339,12 @@ def parse_args():
         "--mode",
         type=str,
         default="train",
-        choices=["train", "heatmap"]
+        choices=["train", "heatmap", "spectral-unsupervised"]
     )
 
     parser.add_argument(
         "--model",
-        required=True,
+        required=False,
         type=str
     )
 
@@ -452,6 +454,108 @@ def parse_args():
         default=0
     )
 
+    parser.add_argument(
+        "--spectral-metadata-csv",
+        type=str,
+        default=None
+    )
+
+    parser.add_argument(
+        "--max-spectral-samples",
+        type=int,
+        default=-1
+    )
+
+    parser.add_argument(
+        "--spectral-length",
+        type=int,
+        default=1024
+    )
+
+    parser.add_argument(
+        "--latent-dim",
+        type=int,
+        default=32
+    )
+
+    parser.add_argument(
+        "--ae-hidden-dim",
+        type=int,
+        default=256
+    )
+
+    parser.add_argument(
+        "--ae-epochs",
+        type=int,
+        default=100
+    )
+
+    parser.add_argument(
+        "--ae-lr",
+        type=float,
+        default=1e-3
+    )
+
+    parser.add_argument(
+        "--ae-batch-size",
+        type=int,
+        default=64
+    )
+
+    parser.add_argument(
+        "--ae-early-stopping-patience",
+        type=int,
+        default=15
+    )
+
+    parser.add_argument(
+        "--hdbscan-min-cluster-size",
+        type=int,
+        default=10
+    )
+
+    parser.add_argument(
+        "--hdbscan-min-samples",
+        type=int,
+        default=5
+    )
+
+    parser.add_argument(
+        "--hdbscan-cluster-selection-method",
+        type=str,
+        default="eom",
+        choices=["eom", "leaf"]
+    )
+
+    parser.add_argument(
+        "--spectral-cache-dir",
+        type=str,
+        default="data/spectral_cache"
+    )
+
+    parser.add_argument(
+        "--spectral-search-radius-arcsec",
+        type=float,
+        default=2.0
+    )
+
+    parser.add_argument(
+        "--spectral-wavelength-min",
+        type=float,
+        default=3800.0
+    )
+
+    parser.add_argument(
+        "--spectral-wavelength-max",
+        type=float,
+        default=9200.0
+    )
+
+    parser.add_argument(
+        "--enable-umap",
+        action="store_true"
+    )
+
     return parser.parse_args()
 
 
@@ -460,8 +564,23 @@ def main():
     args = parse_args()
 
     # =========================
+    # SPECTRAL MODE
+    # =========================
+
+    if args.mode == "spectral-unsupervised":
+
+        run_spectral_unsupervised(args)
+        return
+
+    # =========================
     # HEATMAP MODE
     # =========================
+
+    if args.model is None:
+
+        raise ValueError(
+            "--model e obrigatorio nos modos train e heatmap"
+        )
 
     if args.mode == "heatmap":
 

@@ -1,0 +1,88 @@
+{
+    "models": {
+        "flat_random_forest": {
+            "runs": 1,
+            "metrics": {
+                "accuracy": {
+                    "mean": 0.13636363636363635,
+                    "std": 0.0
+                },
+                "precision": {
+                    "mean": 0.0235042735042735,
+                    "std": 0.0
+                },
+                "recall": {
+                    "mean": 0.0641025641025641,
+                    "std": 0.0
+                },
+                "f1": {
+                    "mean": 0.07575757575757575,
+                    "std": 0.0
+                }
+            },
+            "results_dirs": [
+                "Resultados\\flat_random_forest\\2026-09-01_11-01-36_523189"
+            ]
+        }
+    },
+    "ensembles": {},
+    "model_runs": [
+        {
+            "name": "flat_random_forest",
+            "model_key": "flat_random_forest",
+            "run_index": 1,
+            "seed": 42,
+            "results_dir": "Resultados\\flat_random_forest\\2026-09-01_11-01-36_523189",
+            "metrics": {
+                "accuracy": 0.13636363636363635,
+                "precision": 0.0235042735042735,
+                "recall": 0.0641025641025641,
+                "f1": 0.07575757575757575,
+                "macro_f1": 0.034188034188034185,
+                "hierarchical_loss": 16.038363687073556
+            },
+            "class_names": [
+                "A0",
+                "A4",
+                "A6",
+                "A8",
+                "A9",
+                "CARBON",
+                "CV",
+                "F0",
+                "F2",
+                "F3",
+                "F5",
+                "F8",
+                "F9",
+                "G0",
+                "G1",
+                "G2",
+                "G4",
+                "G5",
+                "G8",
+                "K0",
+                "K1",
+                "K3",
+                "K4",
+                "K5",
+                "K7",
+                "L1",
+                "L5.5",
+                "L9",
+                "M0",
+                "M1",
+                "M2",
+                "M3",
+                "M4",
+                "M4.5",
+                "M5",
+                "M7",
+                "OB",
+                "T2",
+                "WD"
+            ]
+        }
+    ],
+    "ensemble_runs": []
+}

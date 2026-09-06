@@ -1,0 +1,7 @@
+{
+  "source_root": "C:\\Users\\phvna\\Faculdade\\TCC\\Resultados",
+  "output_root": "C:\\Users\\phvna\\Faculdade\\TCC\\baseline_results",
+  "copied_files": 145,
+  "skipped_files": 31,
+  "policy": "Copied reports, metrics, metadata, plots, test_predictions.csv and summary JSON files. Skipped model binaries and large array artifacts."
+}

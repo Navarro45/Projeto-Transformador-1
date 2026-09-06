@@ -1,0 +1,119 @@
+{
+    "models": {
+        "hierarchical_random_forest": {
+            "runs": 1,
+            "metrics": {
+                "accuracy": {
+                    "mean": 0.5675675675675675,
+                    "std": 0.0
+                },
+                "precision": {
+                    "mean": 0.24062365205350286,
+                    "std": 0.0
+                },
+                "recall": {
+                    "mean": 0.194943929293413,
+                    "std": 0.0
+                },
+                "f1": {
+                    "mean": 0.5070498825709201,
+                    "std": 0.0
+                }
+            },
+            "results_dirs": [
+                "Resultados\\hierarchical_random_forest\\2026-09-01_11-21-26_528425"
+            ]
+        }
+    },
+    "ensembles": {},
+    "model_runs": [
+        {
+            "name": "hierarchical_random_forest",
+            "model_key": "hierarchical_random_forest",
+            "run_index": 1,
+            "seed": 42,
+            "results_dir": "Resultados\\hierarchical_random_forest\\2026-09-01_11-21-26_528425",
+            "metrics": {
+                "accuracy": 0.5675675675675675,
+                "precision": 0.24062365205350286,
+                "recall": 0.194943929293413,
+                "f1": 0.5070498825709201,
+                "macro_f1": 0.19987659449586856,
+                "hierarchical_loss": 1.2428032342357955
+            },
+            "class_names": [
+                "A",
+                "A0",
+                "A1",
+                "A2",
+                "A4",
+                "A5",
+                "A6",
+                "A8",
+                "A9",
+                "B0.5",
+                "B1",
+                "B2",
+                "B2.5",
+                "B3",
+                "B5",
+                "B6",
+                "B7",
+                "B8",
+                "B9",
+                "B9.5",
+                "CARBON",
+                "CV",
+                "F0",
+                "F2",
+                "F3",
+                "F5",
+                "F6",
+                "F8",
+                "F9",
+                "G0",
+                "G0.5",
+                "G1",
+                "G2",
+                "G3",
+                "G4",
+                "G5",
+                "G8",
+                "G9",
+                "K0",
+                "K1",
+                "K2",
+                "K3",
+                "K4",
+                "K5",
+                "K7",
+                "L",
+                "L0",
+                "L1",
+                "L2",
+                "L3",
+                "L4",
+                "L5",
+                "L5.5",
+                "L9",
+                "M0",
+                "M1",
+                "M2",
+                "M3",
+                "M4",
+                "M4.5",
+                "M5",
+                "M6",
+                "M7",
+                "M8",
+                "M9",
+                "O",
+                "O8",
+                "OB",
+                "T2",
+                "WD"
+            ]
+        }
+    ],
+    "ensemble_runs": []
+}

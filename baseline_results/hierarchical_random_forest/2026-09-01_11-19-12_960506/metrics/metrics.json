@@ -1,0 +1,327 @@
+{
+    "model": "hierarchical_random_forest",
+    "config": {
+        "n_estimators": 100,
+        "criterion": "log_loss",
+        "max_depth": null,
+        "min_samples_split": 2,
+        "min_samples_leaf": 1,
+        "max_features": "sqrt",
+        "bootstrap": true,
+        "class_weight": "balanced_subsample",
+        "max_samples": null,
+        "random_state": 42,
+        "n_jobs": -1,
+        "prediction_mode": "global_probability"
+    },
+    "splits": {
+        "train": 356,
+        "test": 78,
+        "validation": 66
+    },
+    "classes": {
+        "parents": [
+            "A",
+            "B",
+            "CARBON",
+            "CV",
+            "F",
+            "G",
+            "K",
+            "L",
+            "M",
+            "O",
+            "OB",
+            "T",
+            "WD"
+        ],
+        "leaf_labels": [
+            "A0",
+            "A1",
+            "A2",
+            "A4",
+            "A5",
+            "A6",
+            "A8",
+            "A9",
+            "B5",
+            "B6",
+            "B7",
+            "B9",
+            "CARBON",
+            "CV",
+            "F0",
+            "F2",
+            "F3",
+            "F5",
+            "F6",
+            "F8",
+            "F9",
+            "G0",
+            "G0.5",
+            "G1",
+            "G2",
+            "G4",
+            "G5",
+            "G8",
+            "G9",
+            "K0",
+            "K1",
+            "K3",
+            "K4",
+            "K5",
+            "K7",
+            "L",
+            "L1",
+            "L5.5",
+            "L9",
+            "M0",
+            "M1",
+            "M2",
+            "M3",
+            "M4",
+            "M4.5",
+            "M5",
+            "M6",
+            "M7",
+            "O8",
+            "OB",
+            "T2",
+            "WD"
+        ]
+    },
+    "metrics_by_model": {
+        "hierarchical_random_forest": {
+            "train": {
+                "parent": {
+                    "status": "ok",
+                    "accuracy": 1.0,
+                    "balanced_accuracy": 1.0,
+                    "precision_macro": 1.0,
+                    "recall_macro": 1.0,
+                    "f1_macro": 1.0,
+                    "f1_weighted": 1.0,
+                    "log_loss": 0.16756445317350566
+                },
+                "leaf": {
+                    "status": "ok",
+                    "accuracy": 1.0,
+                    "balanced_accuracy": 1.0,
+                    "precision_macro": 1.0,
+                    "recall_macro": 1.0,
+                    "f1_macro": 1.0,
+                    "f1_weighted": 1.0,
+                    "log_loss": 0.4108875465600737
+                },
+                "hierarchical": {
+                    "exact_match": 356,
+                    "same_parent_error": 0,
+                    "cross_parent_error": 0,
+                    "exact_match_pct": 100.0,
+                    "same_parent_error_pct": 0.0,
+                    "cross_parent_error_pct": 0.0,
+                    "average_hierarchical_distance": 0.0,
+                    "alpha": 0.35,
+                    "parent_log_loss": 0.16756445317350566,
+                    "leaf_log_loss": 0.4108875465600737,
+                    "hierarchical_loss": 0.3257244638747749,
+                    "parent_leaf_consistency": 1.0
+                }
+            },
+            "validation": {
+                "parent": {
+                    "status": "ok",
+                    "accuracy": 0.7424242424242424,
+                    "balanced_accuracy": 0.48516483516483516,
+                    "precision_macro": 0.26058680773320975,
+                    "recall_macro": 0.2612426035502958,
+                    "f1_macro": 0.25417037294865347,
+                    "f1_weighted": 0.6957648379217007,
+                    "log_loss": 0.7433965067619854
+                },
+                "leaf": {
+                    "status": "ok",
+                    "accuracy": 0.5,
+                    "balanced_accuracy": 0.24404761904761904,
+                    "precision_macro": 0.10691435757225229,
+                    "recall_macro": 0.14548992673992675,
+                    "f1_macro": 0.11853362561864586,
+                    "f1_weighted": 0.40672910290135167,
+                    "log_loss": 1.834343733923099
+                },
+                "hierarchical": {
+                    "exact_match": 33,
+                    "same_parent_error": 16,
+                    "cross_parent_error": 17,
+                    "exact_match_pct": 50.0,
+                    "same_parent_error_pct": 24.242424242424242,
+                    "cross_parent_error_pct": 25.757575757575758,
+                    "average_hierarchical_distance": 1.4848484848484849,
+                    "alpha": 0.35,
+                    "parent_log_loss": 0.7433965067619854,
+                    "leaf_log_loss": 1.834343733923099,
+                    "hierarchical_loss": 1.4525122044167094,
+                    "parent_leaf_consistency": 1.0
+                }
+            },
+            "test": {
+                "parent": {
+                    "status": "ok",
+                    "accuracy": 0.6153846153846154,
+                    "balanced_accuracy": 0.2586487586487587,
+                    "precision_macro": 0.2767317702540375,
+                    "recall_macro": 0.23875270029116186,
+                    "f1_macro": 0.22383641999026616,
+                    "f1_weighted": 0.5536435786435786,
+                    "log_loss": 1.872276341672271
+                },
+                "leaf": {
+                    "status": "ok",
+                    "accuracy": 0.38461538461538464,
+                    "balanced_accuracy": 0.16154485049833886,
+                    "precision_macro": 0.0997960372960373,
+                    "recall_macro": 0.13358516483516483,
+                    "f1_macro": 0.1053609880742367,
+                    "f1_weighted": 0.2898075407149817,
+                    "log_loss": 3.077170432519176
+                },
+                "hierarchical": {
+                    "exact_match": 30,
+                    "same_parent_error": 18,
+                    "cross_parent_error": 30,
+                    "exact_match_pct": 38.46153846153847,
+                    "same_parent_error_pct": 23.076923076923077,
+                    "cross_parent_error_pct": 38.46153846153847,
+                    "average_hierarchical_distance": 1.935897435897436,
+                    "alpha": 0.35,
+                    "parent_log_loss": 1.872276341672271,
+                    "leaf_log_loss": 3.077170432519176,
+                    "hierarchical_loss": 2.6554575007227594,
+                    "parent_leaf_consistency": 1.0
+                }
+            }
+        },
+        "flat_random_forest": {
+            "train": {
+                "parent": {
+                    "status": "ok",
+                    "accuracy": 1.0,
+                    "balanced_accuracy": 1.0,
+                    "precision_macro": 1.0,
+                    "recall_macro": 1.0,
+                    "f1_macro": 1.0,
+                    "f1_weighted": 1.0,
+                    "log_loss": 0.1685805479393999
+                },
+                "leaf": {
+                    "status": "ok",
+                    "accuracy": 1.0,
+                    "balanced_accuracy": 1.0,
+                    "precision_macro": 1.0,
+                    "recall_macro": 1.0,
+                    "f1_macro": 1.0,
+                    "f1_weighted": 1.0,
+                    "log_loss": 0.3165520602257819
+                },
+                "hierarchical": {
+                    "exact_match": 356,
+                    "same_parent_error": 0,
+                    "cross_parent_error": 0,
+                    "exact_match_pct": 100.0,
+                    "same_parent_error_pct": 0.0,
+                    "cross_parent_error_pct": 0.0,
+                    "average_hierarchical_distance": 0.0,
+                    "alpha": 0.35,
+                    "parent_log_loss": 0.1685805479393999,
+                    "leaf_log_loss": 0.3165520602257819,
+                    "hierarchical_loss": 0.2647620309255482,
+                    "parent_leaf_consistency": 1.0
+                }
+            },
+            "validation": {
+                "parent": {
+                    "status": "ok",
+                    "accuracy": 0.7727272727272727,
+                    "balanced_accuracy": 0.5170329670329671,
+                    "precision_macro": 0.2521978021978022,
+                    "recall_macro": 0.27840236686390535,
+                    "f1_macro": 0.2630952380952381,
+                    "f1_weighted": 0.7167388167388167,
+                    "log_loss": 0.7163636682771437
+                },
+                "leaf": {
+                    "status": "ok",
+                    "accuracy": 0.4696969696969697,
+                    "balanced_accuracy": 0.22331029185867898,
+                    "precision_macro": 0.09926035502958579,
+                    "recall_macro": 0.13312728937728938,
+                    "f1_macro": 0.11158424908424908,
+                    "f1_weighted": 0.3861832611832612,
+                    "log_loss": 2.6625239152933733
+                },
+                "hierarchical": {
+                    "exact_match": 31,
+                    "same_parent_error": 20,
+                    "cross_parent_error": 15,
+                    "exact_match_pct": 46.96969696969697,
+                    "same_parent_error_pct": 30.303030303030305,
+                    "cross_parent_error_pct": 22.727272727272727,
+                    "average_hierarchical_distance": 1.5,
+                    "alpha": 0.35,
+                    "parent_log_loss": 0.7163636682771437,
+                    "leaf_log_loss": 2.6625239152933733,
+                    "hierarchical_loss": 1.981367828837693,
+                    "parent_leaf_consistency": 1.0
+                }
+            },
+            "test": {
+                "parent": {
+                    "status": "ok",
+                    "accuracy": 0.6410256410256411,
+                    "balanced_accuracy": 0.2686202686202686,
+                    "precision_macro": 0.2077046351084813,
+                    "recall_macro": 0.24795717103409412,
+                    "f1_macro": 0.22353387754565934,
+                    "f1_weighted": 0.5669097014712997,
+                    "log_loss": 2.252673479374782
+                },
+                "leaf": {
+                    "status": "ok",
+                    "accuracy": 0.38461538461538464,
+                    "balanced_accuracy": 0.15669988925802877,
+                    "precision_macro": 0.0719295410471881,
+                    "recall_macro": 0.1295787545787546,
+                    "f1_macro": 0.09210066249539933,
+                    "f1_weighted": 0.26818693002903526,
+                    "log_loss": 6.0022604871359455
+                },
+                "hierarchical": {
+                    "exact_match": 30,
+                    "same_parent_error": 20,
+                    "cross_parent_error": 28,
+                    "exact_match_pct": 38.46153846153847,
+                    "same_parent_error_pct": 25.64102564102564,
+                    "cross_parent_error_pct": 35.8974358974359,
+                    "average_hierarchical_distance": 1.8974358974358974,
+                    "alpha": 0.35,
+                    "parent_log_loss": 2.252673479374782,
+                    "leaf_log_loss": 6.0022604871359455,
+                    "hierarchical_loss": 4.689905034419539,
+                    "parent_leaf_consistency": 1.0
+                }
+            }
+        }
+    },
+    "timings": {
+        "feature_time_seconds": 18.423143700005312,
+        "split_time_seconds": 0.01578019999578828,
+        "training_time_seconds": 1.6462612000032095,
+        "evaluation_time_seconds": 2.218397199998435
+    },
+    "cache": {
+        "cache_hit": false,
+        "features_path": "dataset\\star_supervised\\cache\\spectral_features_83da4231ccb8996a.npz",
+        "metadata_path": "dataset\\star_supervised\\cache\\spectral_features_83da4231ccb8996a.csv",
+        "failures_path": "dataset\\star_supervised\\cache\\spectral_features_83da4231ccb8996a_failures.csv"
+    }
+}
