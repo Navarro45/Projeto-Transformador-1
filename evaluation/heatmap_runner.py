@@ -94,23 +94,22 @@ def get_latest_weights(model_name):
             f"Modelo desconhecido: {model_name}"
         )
 
-    model_dir = (
-        Path("Resultados") /
-        RESULTS_MAPPING[model_name]
-    )
-
-    if not model_dir.exists():
-
-        raise ValueError(
-            f"Nenhum resultado encontrado "
-            f"para {model_name}"
-        )
+    results_root = Path("Resultados")
+    mapped_name = RESULTS_MAPPING[model_name]
 
     checkpoints = list(
-        model_dir.glob(
+        (results_root / mapped_name).glob(
             "**/model/model.pth"
         )
     )
+
+    checkpoints.extend(
+        results_root.glob(
+            f"**/{mapped_name}/**/model/model.pth"
+        )
+    )
+
+    checkpoints = list(dict.fromkeys(checkpoints))
 
     if not checkpoints:
 

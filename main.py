@@ -29,6 +29,71 @@ from shared.metrics import plot_training_history
 from utils.result_manager import ResultsManager
 
 from shared.pipelines.spectral_unsupervised import run_spectral_unsupervised
+from shared.pipelines.star_supervised_random_forest import (
+    resolve_rf_label_levels,
+    run_star_random_forest,
+)
+
+
+def _split_manifest_for_label_level(path, label_level):
+
+    if not path:
+
+        return path
+
+    root, extension = os.path.splitext(str(path))
+
+    return f"{root}_{label_level}{extension}"
+
+
+def _run_star_model_levels(args, model_names, execution_dir):
+
+    requested_level = args.rf_label_level
+    label_levels = resolve_rf_label_levels(requested_level)
+    original_split_manifest = args.rf_split_manifest
+    use_variants = len(label_levels) > 1
+    records = []
+
+    args.results_execution_dir = execution_dir
+
+    try:
+
+        for run_index in range(1, args.runs + 1):
+
+            for model_name in model_names:
+
+                for label_level in label_levels:
+
+                    args.rf_label_level = label_level
+                    args.rf_result_variant = (
+                        label_level
+                        if use_variants
+                        else None
+                    )
+                    args.rf_split_manifest = (
+                        _split_manifest_for_label_level(
+                            original_split_manifest,
+                            label_level,
+                        )
+                        if use_variants
+                        else original_split_manifest
+                    )
+
+                    records.append(
+                        run_star_random_forest(
+                            args,
+                            model_name,
+                            run_index=run_index,
+                        )
+                    )
+
+    finally:
+
+        args.rf_label_level = requested_level
+        args.rf_split_manifest = original_split_manifest
+        args.rf_result_variant = None
+
+    return records
 
 def _optional_limit(value):
 
@@ -73,13 +138,50 @@ def get_class_names(dataset_dir):
     )
 
 
+def validate_image_splits(train_dir, validation_dir, test_dir):
+
+    missing = []
+
+    for split_name, split_dir in (
+        ("train", train_dir),
+        ("val", validation_dir),
+        ("test", test_dir),
+    ):
+
+        if not os.path.isdir(split_dir):
+
+            missing.append(f"{split_name}: diretorio ausente ({split_dir})")
+            continue
+
+        has_files = any(
+            files
+            for _, _, files in os.walk(split_dir)
+        )
+
+        if not has_files:
+
+            missing.append(f"{split_name}: sem imagens ({split_dir})")
+
+    if missing:
+
+        details = "; ".join(missing)
+
+        raise FileNotFoundError(
+            "Os modelos de imagem exigem os splits 70/15/15 preparados. "
+            f"Problemas encontrados: {details}. "
+            "Execute: python scripts/prepare_dataset.py"
+        )
+
+
 def run_pipeline(
 
     model_name,
 
-    train_dir="data/train",
+    train_dir="dataset/train",
 
-    test_dir="data/test",
+    validation_dir="dataset/val",
+
+    test_dir="dataset/test",
 
     batch_size=16,
 
@@ -108,6 +210,8 @@ def run_pipeline(
     seed=42,
 
     run_index=1,
+
+    execution_dir=None,
     ):
 
     set_global_seed(seed)
@@ -128,13 +232,13 @@ def run_pipeline(
 
         train_dir=train_dir,
 
+        validation_dir=validation_dir,
+
         test_dir=test_dir,
 
         img_size=img_size,
 
         batch_size=batch_size,
-
-        validation_split=0.2,
 
         max_train_images=_optional_limit(
             max_train_images
@@ -173,7 +277,9 @@ def run_pipeline(
     # =========================
 
     results = ResultsManager(
-        model_wrapper.model_name
+        model_wrapper.model_name,
+        execution_dir=execution_dir,
+        run_index=run_index,
     )
 
     # =========================
@@ -356,12 +462,17 @@ def parse_args():
 
     parser.add_argument(
         "--train-dir",
-        default="data/train"
+        default="dataset/train"
+    )
+
+    parser.add_argument(
+        "--validation-dir",
+        default="dataset/val"
     )
 
     parser.add_argument(
         "--test-dir",
-        default="data/test"
+        default="dataset/test"
     )
 
     parser.add_argument(
@@ -464,6 +575,121 @@ def parse_args():
         "--max-spectral-samples",
         type=int,
         default=-1
+    )
+
+    parser.add_argument(
+        "--star-objects-index",
+        type=str,
+        default="dataset/star_objects/star_objects_index.csv"
+    )
+
+    parser.add_argument(
+        "--rf-cache-dir",
+        type=str,
+        default="dataset/star_supervised/cache"
+    )
+
+    parser.add_argument(
+        "--rf-split-manifest",
+        type=str,
+        default=None
+    )
+
+    parser.add_argument(
+        "--rf-label-level",
+        type=str,
+        default="main",
+        choices=["main", "subclass", "both"]
+    )
+
+    parser.add_argument(
+        "--rf-refresh-cache",
+        action="store_true"
+    )
+
+    parser.add_argument(
+        "--rf-refresh-split",
+        action="store_true"
+    )
+
+    parser.add_argument(
+        "--rf-n-estimators",
+        type=int,
+        default=300
+    )
+
+    parser.add_argument(
+        "--rf-criterion",
+        type=str,
+        default="log_loss",
+        choices=["gini", "entropy", "log_loss"]
+    )
+
+    parser.add_argument(
+        "--rf-max-depth",
+        type=str,
+        default=None
+    )
+
+    parser.add_argument(
+        "--rf-min-samples-split",
+        type=int,
+        default=2
+    )
+
+    parser.add_argument(
+        "--rf-min-samples-leaf",
+        type=int,
+        default=1
+    )
+
+    parser.add_argument(
+        "--rf-max-features",
+        type=str,
+        default="sqrt"
+    )
+
+    parser.add_argument(
+        "--rf-bootstrap",
+        action=argparse.BooleanOptionalAction,
+        default=True
+    )
+
+    parser.add_argument(
+        "--rf-class-weight",
+        type=str,
+        default="balanced_subsample"
+    )
+
+    parser.add_argument(
+        "--rf-bootstrap-max-samples",
+        type=str,
+        default=None
+    )
+
+    parser.add_argument(
+        "--rf-n-jobs",
+        type=int,
+        default=-1
+    )
+
+    parser.add_argument(
+        "--rf-prediction-mode",
+        type=str,
+        default="global_probability",
+        choices=["global_probability", "conditional"]
+    )
+
+    parser.add_argument(
+        "--hrf-alpha",
+        type=float,
+        default=0.35
+    )
+
+    parser.add_argument(
+        "--hrf-alpha-grid",
+        type=str,
+        default=""
     )
 
     parser.add_argument(
@@ -599,9 +825,62 @@ def main():
             "--runs deve ser maior ou igual a 1"
         )
 
-    model_records = []
+    execution_dir = ResultsManager.create_execution_dir()
 
-    if args.model.lower() == "all":
+    print(f"Diretorio desta execucao: {execution_dir}")
+
+    model_records = []
+    model_selector = args.model.lower()
+
+    if model_selector in {
+        "all_star_models",
+        "all_star_random_forests",
+    }:
+
+        model_records = _run_star_model_levels(
+            args,
+            ModelFactory.SKLEARN_MODELS,
+            execution_dir,
+        )
+
+        save_summary(
+            os.path.join(
+                execution_dir,
+                "summary_all_star_models.json"
+            ),
+            model_records
+        )
+
+        return
+
+    if (
+        model_selector not in {"all", "all_models"}
+        and ModelFactory.is_sklearn_model(args.model)
+    ):
+
+        model_records = _run_star_model_levels(
+            args,
+            [args.model],
+            execution_dir,
+        )
+
+        save_summary(
+            os.path.join(
+                execution_dir,
+                f"summary_{args.model}.json"
+            ),
+            model_records
+        )
+
+        return
+
+    if model_selector in {"all", "all_models"}:
+
+        validate_image_splits(
+            args.train_dir,
+            args.validation_dir,
+            args.test_dir,
+        )
 
         for run_index in range(1, args.runs + 1):
 
@@ -623,6 +902,8 @@ def main():
                         model_name=model_name,
 
                         train_dir=args.train_dir,
+
+                        validation_dir=args.validation_dir,
 
                         test_dir=args.test_dir,
 
@@ -653,6 +934,8 @@ def main():
                         seed=args.seed + run_index - 1,
 
                         run_index=run_index,
+
+                        execution_dir=execution_dir,
                     )
 
                     model_records.append(record)
@@ -677,15 +960,30 @@ def main():
 
         ensemble_records = evaluate_ensemble(
             model_records,
-            class_names
+            class_names,
+            base_output_dir=execution_dir,
         )
+
+        all_records = list(model_records)
+        summary_name = "summary_all.json"
+
+        if model_selector == "all_models":
+
+            star_records = _run_star_model_levels(
+                args,
+                ModelFactory.SKLEARN_MODELS,
+                execution_dir,
+            )
+
+            all_records.extend(star_records)
+            summary_name = "summary_all_models.json"
 
         save_summary(
             os.path.join(
-                "Resultados",
-                "summary_all.json"
+                execution_dir,
+                summary_name
             ),
-            model_records,
+            all_records,
             ensemble_records
         )
 
@@ -707,6 +1005,8 @@ def main():
                 model_name=args.model,
 
                 train_dir=args.train_dir,
+
+                validation_dir=args.validation_dir,
 
                 test_dir=args.test_dir,
 
@@ -737,6 +1037,8 @@ def main():
                 seed=args.seed + run_index - 1,
 
                 run_index=run_index,
+
+                execution_dir=execution_dir,
             )
 
             model_records.append(record)
@@ -749,7 +1051,7 @@ def main():
 
         save_summary(
             os.path.join(
-                "Resultados",
+                execution_dir,
                 f"summary_{args.model}.json"
             ),
             model_records

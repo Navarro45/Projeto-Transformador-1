@@ -28,6 +28,7 @@ from sklearn.metrics import (
 from models.model_factory import ModelFactory
 from models.random_forest_modelo import RandomForestModelConfig
 from shared.spectral_labels import normalize_spectral_label
+from shared.paths import relocate_dataset_path
 from spectral.preprocessing import SpectralPreprocessor, SpectralPreprocessorConfig
 from utils.result_manager import ResultsManager
 
@@ -36,6 +37,20 @@ ROOT_LABEL = "STAR"
 DEFAULT_STAR_OBJECTS_INDEX = "dataset/star_objects/star_objects_index.csv"
 DEFAULT_RF_CACHE_DIR = "dataset/star_supervised/cache"
 DEFAULT_RF_SPLIT_MANIFEST = "dataset/star_supervised/splits/split_manifest.csv"
+DEFAULT_RF_MAIN_SPLIT_MANIFEST = "dataset/star_supervised/splits/split_manifest_main.csv"
+RF_LABEL_LEVELS = {"main", "subclass"}
+
+
+def resolve_rf_label_levels(label_level: str) -> list[str]:
+    normalized = str(label_level).strip().lower()
+    if normalized == "both":
+        return ["main", "subclass"]
+    if normalized in RF_LABEL_LEVELS:
+        return [normalized]
+    valid_values = sorted(RF_LABEL_LEVELS | {"both"})
+    raise ValueError(
+        f"--rf-label-level precisa ser um de: {', '.join(valid_values)}."
+    )
 
 
 def _is_missing(value) -> bool:
@@ -111,10 +126,30 @@ def build_hierarchy(records: pd.DataFrame) -> dict:
     }
 
 
+def apply_spectral_label_level(records: pd.DataFrame, label_level: str) -> pd.DataFrame:
+    label_level = str(label_level).strip().lower()
+    if label_level not in RF_LABEL_LEVELS:
+        raise ValueError(
+            f"Nivel de rotulo espectral invalido: {label_level}. "
+            f"Use um de: {', '.join(sorted(RF_LABEL_LEVELS))}."
+        )
+
+    output = records.copy()
+    output["spectral_subclass_label"] = output["spectral_leaf_label"].astype(str)
+    output["spectral_group_label"] = output["spectral_parent_label"].astype(str)
+    output["spectral_label_level"] = label_level
+
+    if label_level == "main":
+        output["spectral_leaf_label"] = output["spectral_group_label"]
+
+    return output
+
+
 def load_star_supervised_records(
     star_objects_index: str | Path,
     max_samples: int | None = None,
     seed: int = 42,
+    label_level: str = "main",
 ) -> pd.DataFrame:
     index_path = Path(star_objects_index)
     if not index_path.exists():
@@ -129,15 +164,26 @@ def load_star_supervised_records(
 
     rows = []
     base_dir = index_path.parent
+    dataset_root = base_dir.parent
 
     for _, row in index.iterrows():
         star_id = str(row["star_id"])
-        object_dir = Path(str(row.get("object_dir", base_dir / star_id)))
-        if not object_dir.is_absolute():
-            object_dir = (base_dir / object_dir).resolve()
+        stored_object_dir = row.get("object_dir", base_dir / star_id)
+        object_dir = relocate_dataset_path(stored_object_dir, dataset_root)
+        expected_object_dir = (base_dir / star_id).resolve()
+        if object_dir is None or not object_dir.exists():
+            object_dir = expected_object_dir
 
         target = _read_json(object_dir / "Target" / "target.json")
         spectrogram = _read_json(object_dir / "Spectrogram" / "metadata.json")
+        spectrum_path = relocate_dataset_path(
+            spectrogram.get("spectrum_path", ""),
+            dataset_root,
+        )
+        spectrum_metadata_path = relocate_dataset_path(
+            spectrogram.get("spectrum_metadata_path", ""),
+            dataset_root,
+        )
         raw_label = target.get("spectral_subclass_raw", row.get("spectral_subclass_raw", "UNKNOWN"))
         labels = normalize_spectral_label(raw_label)
 
@@ -147,8 +193,12 @@ def load_star_supervised_records(
                 "objID": row.get("objID"),
                 "specObjID": row.get("specObjID"),
                 "object_dir": str(object_dir),
-                "spectrum_path": spectrogram.get("spectrum_path", ""),
-                "spectrum_metadata_path": spectrogram.get("spectrum_metadata_path", ""),
+                "spectrum_path": str(spectrum_path) if spectrum_path else "",
+                "spectrum_metadata_path": (
+                    str(spectrum_metadata_path)
+                    if spectrum_metadata_path
+                    else ""
+                ),
                 "target_path": str(object_dir / "Target" / "target.json"),
                 **labels,
             }
@@ -157,7 +207,7 @@ def load_star_supervised_records(
     records = pd.DataFrame(rows)
     if records.empty:
         raise ValueError("Nenhum objeto STAR foi encontrado para o treinamento supervisionado.")
-    return records
+    return apply_spectral_label_level(records, label_level)
 
 
 def extract_spectrum_features(path: str | Path, preprocessor: SpectralPreprocessor) -> tuple[np.ndarray, dict]:
@@ -192,6 +242,21 @@ def _cache_key(records: pd.DataFrame, config: SpectralPreprocessorConfig) -> str
     return hashlib.sha256(text.encode("utf-8")).hexdigest()[:16]
 
 
+def _refresh_cached_labels(metadata: pd.DataFrame, records: pd.DataFrame) -> pd.DataFrame:
+    label_columns = [
+        "spectral_subclass_raw",
+        "spectral_parent_label",
+        "spectral_leaf_label",
+        "spectral_subclass_label",
+        "spectral_group_label",
+        "spectral_label_level",
+    ]
+    current_columns = ["star_id"] + [column for column in label_columns if column in records.columns]
+    current = records[current_columns].drop_duplicates("star_id")
+    cached = metadata.drop(columns=[column for column in label_columns if column in metadata.columns])
+    return cached.merge(current, on="star_id", how="left", validate="one_to_one")
+
+
 def load_or_build_spectral_features(
     records: pd.DataFrame,
     preprocessor_config: SpectralPreprocessorConfig,
@@ -209,6 +274,7 @@ def load_or_build_spectral_features(
     if features_path.exists() and metadata_path.exists() and not refresh_cache:
         cached = np.load(features_path, allow_pickle=False)
         metadata = pd.read_csv(metadata_path, dtype={"objID": str, "specObjID": str})
+        metadata = _refresh_cached_labels(metadata, records)
         failures = (
             pd.read_csv(failures_path, dtype={"objID": str, "specObjID": str})
             if failures_path.exists()
@@ -762,6 +828,7 @@ def _make_report(
         f"- Features espectrais: {config.to_dict()}",
         f"- Cache de features: {cache_info.get('features_path')}",
         f"- Split: {split_records['split'].value_counts().to_dict()}",
+        f"- Nivel do rotulo: {split_records['spectral_label_level'].iloc[0]}",
         f"- Parents: {len(hierarchy['parent_labels'])}",
         f"- Leaf labels: {len(hierarchy['leaf_labels'])}",
         "",
@@ -819,13 +886,23 @@ def run_star_random_forest(args, model_name: str, run_index: int = 1) -> dict:
     np.random.seed(seed)
 
     model_key = str(model_name).lower()
+    label_level = str(_arg(args, "rf_label_level", "main")).strip().lower()
+    if label_level not in RF_LABEL_LEVELS:
+        raise ValueError(
+            f"--rf-label-level precisa ser um de: {', '.join(sorted(RF_LABEL_LEVELS))}."
+        )
     config = config_from_args(args, seed)
     if model_key == "flat_random_forest":
         config.prediction_mode = "global_probability"
 
-    results = ResultsManager(model_key)
+    results = ResultsManager(
+        model_key,
+        execution_dir=_arg(args, "results_execution_dir", None),
+        run_index=run_index,
+        variant=_arg(args, "rf_result_variant", None),
+    )
     base_dir = Path(results.base_dir)
-    reports_dir = base_dir / "reports"
+    reports_dir = Path(results.reports_dir)
     reports_dir.mkdir(parents=True, exist_ok=True)
 
     max_spectral_samples = int(_arg(args, "max_spectral_samples", -1))
@@ -837,6 +914,7 @@ def run_star_random_forest(args, model_name: str, run_index: int = 1) -> dict:
         _arg(args, "star_objects_index", DEFAULT_STAR_OBJECTS_INDEX),
         max_samples=max_spectral_samples,
         seed=seed,
+        label_level=label_level,
     )
 
     preprocessor_config = SpectralPreprocessorConfig(
@@ -854,9 +932,16 @@ def run_star_random_forest(args, model_name: str, run_index: int = 1) -> dict:
     feature_time = time.perf_counter() - start
 
     split_start = time.perf_counter()
+    split_manifest_path = _arg(args, "rf_split_manifest", None)
+    if not split_manifest_path:
+        split_manifest_path = (
+            DEFAULT_RF_MAIN_SPLIT_MANIFEST
+            if label_level == "main"
+            else DEFAULT_RF_SPLIT_MANIFEST
+        )
     split_records = make_split_manifest(
         feature_records,
-        _arg(args, "rf_split_manifest", DEFAULT_RF_SPLIT_MANIFEST),
+        split_manifest_path,
         seed=seed,
         refresh_split=bool(_arg(args, "rf_refresh_split", False)),
     )
@@ -1071,6 +1156,7 @@ def run_star_random_forest(args, model_name: str, run_index: int = 1) -> dict:
 
     metrics_payload = {
         "model": model_key,
+        "spectral_label_level": label_level,
         "config": config.to_dict(),
         "splits": split_records["split"].value_counts().to_dict(),
         "classes": {
@@ -1104,6 +1190,8 @@ def run_star_random_forest(args, model_name: str, run_index: int = 1) -> dict:
         "seed": seed,
         "results_dir": results.base_dir,
         "star_objects_index": _arg(args, "star_objects_index", DEFAULT_STAR_OBJECTS_INDEX),
+        "spectral_label_level": label_level,
+        "split_manifest": str(split_manifest_path),
         "valid_spectra": int(len(feature_records)),
         "feature_failures": int(len(failures)),
         "random_forest": config.to_dict(),
@@ -1130,12 +1218,20 @@ def run_star_random_forest(args, model_name: str, run_index: int = 1) -> dict:
     print(f"Resultados: {results.base_dir}")
     print(f"Amostras validas: {len(feature_records)} | Falhas: {len(failures)}")
 
+    result_variant = _arg(args, "rf_result_variant", None)
+    result_name = (
+        f"{model_key}_{label_level}"
+        if result_variant
+        else model_key
+    )
+
     return {
-        "name": model_key,
+        "name": result_name,
         "model_key": model_key,
         "run_index": run_index,
         "seed": seed,
         "results_dir": results.base_dir,
         "metrics": summary_metrics,
         "class_names": hierarchy["leaf_labels"],
+        "spectral_label_level": label_level,
     }

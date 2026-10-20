@@ -97,7 +97,7 @@ def _resolve_from_parts(row: pd.Series, train_dir: str, test_dir: str) -> Option
     if split == "test":
         return _existing_path(Path(test_dir) / class_name / image_filename)
 
-    candidate = Path("data") / split / class_name / image_filename
+    candidate = Path(train_dir).parent / split / class_name / image_filename
     return _existing_path(candidate)
 
 

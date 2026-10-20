@@ -7,6 +7,8 @@ from pathlib import Path
 import pandas as pd
 
 from gaia_sdss.stellar import derive_stellar_evolution_class, is_missing
+from shared.paths import relocate_dataset_path
+from shared.spectral_labels import normalize_spectral_label
 
 
 def _json_value(value):
@@ -40,10 +42,14 @@ def _write_json(path: Path, payload: dict) -> None:
     path.write_text(json.dumps(_json_ready(payload), indent=2, ensure_ascii=False, allow_nan=False), encoding="utf-8")
 
 
-def _existing_path(value) -> Path | None:
+def _existing_path(value, dataset_root: Path | None = None) -> Path | None:
     if is_missing(value):
         return None
-    path = Path(str(value))
+    path = (
+        relocate_dataset_path(value, dataset_root)
+        if dataset_root is not None
+        else Path(str(value))
+    )
     return path if path.exists() else None
 
 
@@ -68,7 +74,7 @@ def _derive_plot_path(row: dict, dataset_root: Path) -> Path | None:
         dataset_root / "plots" / f"{spec_obj_id}_spectrum.png",
     ]
     for candidate in candidates:
-        path = _existing_path(candidate)
+        path = _existing_path(candidate, dataset_root)
         if path is not None:
             return path
     return None
@@ -122,9 +128,16 @@ def build_star_object_dataset(
         star_id = f"STAR_{sequential_id:06d}"
         object_dir = output_dir / star_id
 
-        image_path = _existing_path(row.get("image_path"))
-        spectrum_path = _existing_path(row.get("spectrum_path"))
-        spectrum_metadata_path = _existing_path(row.get("spectrum_metadata_path"))
+        spectral_labels = normalize_spectral_label(
+            row.get("spectral_subclass_raw", row.get("pipeline_subclass"))
+        )
+
+        image_path = _existing_path(row.get("image_path"), dataset_root)
+        spectrum_path = _existing_path(row.get("spectrum_path"), dataset_root)
+        spectrum_metadata_path = _existing_path(
+            row.get("spectrum_metadata_path"),
+            dataset_root,
+        )
         spectrum_plot_path = _derive_plot_path(row, dataset_root)
 
         copied_image = _copy_asset(
@@ -140,8 +153,10 @@ def build_star_object_dataset(
 
         target = {
             "spectral_class": _text_value(row.get("spectralClass"), "STAR"),
-            "spectral_subclass_raw": _text_value(row.get("spectral_subclass_raw", row.get("pipeline_subclass")), "SEM_SUBCLASSE"),
-            "spectral_class_major": _text_value(row.get("spectral_class_major"), "UNKNOWN"),
+            "spectral_subclass_raw": spectral_labels["spectral_subclass_raw"],
+            "spectral_class_major": spectral_labels["spectral_parent_label"],
+            "spectral_parent_label": spectral_labels["spectral_parent_label"],
+            "spectral_leaf_label": spectral_labels["spectral_leaf_label"],
             "roman_luminosity_class_raw": _text_value(row.get("roman_luminosity_class_raw"), ""),
             "stellar_evolution_class": _text_value(row.get("stellar_evolution_class"), "UNKNOWN"),
             "stellar_evolution_method": _text_value(row.get("stellar_evolution_method"), ""),
@@ -234,6 +249,8 @@ def build_star_object_dataset(
                 "specObjID": row.get("specObjID"),
                 "spectral_subclass_raw": target["spectral_subclass_raw"],
                 "spectral_class_major": target["spectral_class_major"],
+                "spectral_parent_label": target["spectral_parent_label"],
+                "spectral_leaf_label": target["spectral_leaf_label"],
                 "stellar_evolution_class": target["stellar_evolution_class"],
                 "stellar_evolution_status": target["stellar_evolution_status"],
                 "match_status": row.get("match_status"),
