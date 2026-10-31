@@ -403,6 +403,59 @@ Executar um treinamento reduzido para teste rapido:
 python main.py --model efficientnet --epochs 2 --max-train-images 200 --max-validation-images 60 --max-test-images 60
 ```
 
+### Classificacao hierarquica com nivel espectral global e data augmentation
+
+O manifesto dos tres niveis e preparado separadamente do treinamento. Ele
+reutiliza os splits e as imagens locais, integra as estrelas Gaia/SDSS ja
+baixadas e rejeita objetos repetidos. O comando nao baixa nem copia imagens:
+
+```bash
+python scripts/prepare_hierarchical_dataset.py
+```
+
+Gerar um painel auditavel com imagem original, mascara, objeto isolado e
+composicao sintetica em fundo preto:
+
+```bash
+python scripts/generate_augmentation_examples.py
+```
+
+Treinar a ResNet em 256x256. O nivel 1 separa `GALAXY/QSO/STAR`, o nivel 2
+separa luminosidades `III/IV/V` e classes especiais `WD/CARBON/CV`. O nivel 3
+usa um unico classificador da mesma familia para todas as classes espectrais
+elegiveis `O/B/A/F/G/K/M`, reunindo estrelas de todas as luminosidades romanas:
+
+```bash
+python main.py --model resnet --hierarchical --runs 1
+```
+
+Os niveis 2 e 3 usam ate 500 amostras por saida. Todas as classes treinaveis
+misturam imagens reais e sinteticas. Classes abundantes usam por padrao 450
+reais e 50 sinteticas; classes menores preservam todas as reais e completam a
+meta dentro do limite de dez sinteticas por objeto. Validacao e teste continuam
+100% reais. Nenhuma imagem e redimensionada para 224.
+
+Para executar todas as familias visuais com a mesma hierarquia:
+
+```bash
+python main.py --model all --hierarchical --runs 1
+```
+
+Os artefatos ficam em
+`Resultados/<data>/<familia>_hierarchical/execucao_<n>/hierarchy/`, separados
+por nivel e classificador. Cada nivel recebe `metadata/train_manifest.csv` e
+`metadata/augmentation_summary.json`, alem do caminho completo, confiancas,
+motivo de parada e distancia hierarquica. Uma execucao interrompida pode reutilizar familias e
+checkpoints concluidos indicando a pasta datada existente:
+
+```bash
+python main.py --model all --hierarchical --runs 1 --hierarchy-resume-execution Resultados/2026-10-26_00-39-14_517462
+```
+
+Na retomada, nos completos sao validados e ignorados, checkpoints sem todos os
+relatorios sao apenas reavaliados e somente nos sem checkpoint sao treinados.
+As decisoes ficam em `metadata/resume_plan.json`.
+
 Parametros relevantes:
 
 | Parametro | Descricao | Padrao |
@@ -415,10 +468,19 @@ Parametros relevantes:
 | `--batch-size` | Tamanho do lote | `16` |
 | `--epochs` | Numero maximo de epocas | `200` |
 | `--learning-rate` | Taxa de aprendizado | `1e-4` |
-| `--img-size` | Resolucao de entrada | `224` |
+| `--img-size` | Resolucao de entrada; a hierarquia exige o tamanho original | `256` |
 | `--runs` | Numero de repeticoes experimentais | `1` |
 | `--seed` | Semente inicial | `42` |
 | `--heatmaps-per-model` | Quantidade de heatmaps por modelo apos o treino | `0` |
+| `--hierarchical` | Ativa a cascata com luminosidade no nivel 2 e um classificador espectral global no nivel 3 | desativado |
+| `--hierarchy-manifest` | Manifesto romano/espectral sem substituir o manifesto global anterior | `dataset/hierarchy/roman_spectral_manifest.csv` |
+| `--hierarchy-min-train-per-class` | Minimo real para uma classe espectral entrar no classificador global | `10` |
+| `--hierarchy-balance-target` | Meta maxima real+sintetica por saida | `500` |
+| `--hierarchy-min-synthetic-fraction` | Fracao sintetica minima em classes abundantes | `0.10` |
+| `--hierarchy-max-synthetic-per-source` | Limite sintetico por objeto real e no | `10` |
+| `--hierarchy-disable-augmentation` | Executa baseline somente com imagens reais | desativado |
+| `--hierarchy-confidence-threshold` | Confianca minima para continuar o roteamento | `0.0` |
+| `--hierarchy-resume-execution` | Pasta datada existente para retomada granular | desativado |
 
 ## Treinamento e Validacao
 

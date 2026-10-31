@@ -22,6 +22,8 @@ from evaluation.heatmap_runner import (
 
 from models.model_factory import ModelFactory
 
+from hierarchy.image_pipeline import run_hierarchical_image_pipeline
+
 from training.trainer import Trainer
 
 from shared.metrics import plot_training_history
@@ -496,7 +498,7 @@ def parse_args():
     parser.add_argument(
         "--img-size",
         type=int,
-        default=224
+        default=256
     )
 
     parser.add_argument(
@@ -563,6 +565,71 @@ def parse_args():
         "--heatmaps-per-model",
         type=int,
         default=0
+    )
+
+    parser.add_argument(
+        "--hierarchical",
+        action="store_true",
+        help=(
+            "Treina a cascata em 256x256: classe do objeto, luminosidade/especial "
+            "e um unico classificador espectral global no nivel 3."
+        ),
+    )
+
+    parser.add_argument(
+        "--hierarchy-manifest",
+        default="dataset/hierarchy/roman_spectral_manifest.csv",
+        help="Manifesto unico preparado por scripts/prepare_hierarchical_dataset.py.",
+    )
+
+    parser.add_argument(
+        "--hierarchy-min-train-per-class",
+        type=int,
+        default=10,
+        help="Minimo real para uma classe espectral participar do modelo global.",
+    )
+
+    parser.add_argument(
+        "--hierarchy-balance-target",
+        type=int,
+        default=500,
+        help="Meta maxima de amostras reais+sinteticas por saida dos niveis 2 e 3.",
+    )
+
+    parser.add_argument(
+        "--hierarchy-min-synthetic-fraction",
+        type=float,
+        default=0.10,
+        help="Fracao minima sintetica por classe; 0.10 produz 450 reais + 50 sinteticas.",
+    )
+
+    parser.add_argument(
+        "--hierarchy-max-synthetic-per-source",
+        type=int,
+        default=10,
+        help="Limite de imagens sinteticas derivadas do mesmo objeto real em cada no.",
+    )
+
+    parser.add_argument(
+        "--hierarchy-disable-augmentation",
+        action="store_true",
+        help="Executa o baseline hierarquico somente com imagens reais.",
+    )
+
+    parser.add_argument(
+        "--hierarchy-confidence-threshold",
+        type=float,
+        default=0.0,
+        help="Confianca minima [0,1] para continuar ao proximo nivel.",
+    )
+
+    parser.add_argument(
+        "--hierarchy-resume-execution",
+        default=None,
+        help=(
+            "Diretorio Resultados/<data> existente para validar e reutilizar "
+            "checkpoints hierarquicos sem retreinar nos concluidos."
+        ),
     )
 
     parser.add_argument(
@@ -825,12 +892,87 @@ def main():
             "--runs deve ser maior ou igual a 1"
         )
 
-    execution_dir = ResultsManager.create_execution_dir()
+    resume_execution = getattr(args, "hierarchy_resume_execution", None)
+
+    if resume_execution and not getattr(args, "hierarchical", False):
+        raise ValueError(
+            "--hierarchy-resume-execution exige --hierarchical"
+        )
+
+    if resume_execution:
+        execution_dir = os.path.normpath(str(resume_execution))
+        if not os.path.isdir(execution_dir):
+            raise FileNotFoundError(
+                f"Diretorio de retomada nao encontrado: {execution_dir}"
+            )
+        print(f"Retomando execucao existente: {execution_dir}")
+    else:
+        execution_dir = ResultsManager.create_execution_dir()
 
     print(f"Diretorio desta execucao: {execution_dir}")
 
     model_records = []
     model_selector = args.model.lower()
+
+    if getattr(args, "hierarchical", False):
+
+        if args.img_size != 256:
+            raise ValueError("A nova hierarquia visual exige --img-size 256")
+
+        if args.hierarchy_balance_target < 2:
+            raise ValueError("--hierarchy-balance-target deve ser maior ou igual a 2")
+
+        if not 0.0 < args.hierarchy_min_synthetic_fraction < 1.0:
+            raise ValueError(
+                "--hierarchy-min-synthetic-fraction deve estar entre 0 e 1"
+            )
+
+        if args.hierarchy_max_synthetic_per_source < 1:
+            raise ValueError(
+                "--hierarchy-max-synthetic-per-source deve ser maior ou igual a 1"
+            )
+
+        if not 0.0 <= args.hierarchy_confidence_threshold <= 1.0:
+            raise ValueError("--hierarchy-confidence-threshold deve estar entre 0 e 1")
+
+        if model_selector in {"all", "all_models"}:
+            hierarchy_models = unique_models
+        elif model_selector in ModelFactory.MODELS:
+            hierarchy_models = [model_selector]
+        else:
+            raise ValueError(
+                "--hierarchical aceita um modelo de imagem registrado, "
+                "--model all ou --model all_models"
+            )
+
+        for run_index in range(1, args.runs + 1):
+            for model_name in hierarchy_models:
+                model_records.append(
+                    run_hierarchical_image_pipeline(
+                        args=args,
+                        model_name=model_name,
+                        run_index=run_index,
+                        execution_dir=execution_dir,
+                    )
+                )
+                gc.collect()
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
+
+        if model_selector == "all_models":
+            model_records.extend(
+                _run_star_model_levels(
+                    args,
+                    ModelFactory.SKLEARN_MODELS,
+                    execution_dir,
+                )
+            )
+
+        save_summary(
+            os.path.join(execution_dir, f"summary_{model_selector}_hierarchical.json"),
+            model_records,
+        )
+        return
 
     if model_selector in {
         "all_star_models",

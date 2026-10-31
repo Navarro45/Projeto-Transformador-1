@@ -86,3 +86,64 @@ def test_all_models_requires_prepared_image_splits(tmp_path):
             assert "python scripts/prepare_dataset.py" in str(error)
         else:
             raise AssertionError("all_models deveria rejeitar splits vazios")
+
+
+def test_hierarchical_resnet_uses_dedicated_pipeline(tmp_path):
+    args = _args(tmp_path)
+    args.model = "resnet"
+    args.hierarchical = True
+    args.img_size = 256
+    args.hierarchy_manifest = str(tmp_path / "manifest.csv")
+    args.hierarchy_min_train_per_class = 10
+    args.hierarchy_confidence_threshold = 0.0
+    args.hierarchy_balance_target = 500
+    args.hierarchy_min_synthetic_fraction = 0.10
+    args.hierarchy_max_synthetic_per_source = 10
+    args.hierarchy_disable_augmentation = False
+    args.hierarchy_resume_execution = None
+    record = {"name": "resnet_hierarchical", "metrics": {}}
+
+    with (
+        patch.object(main, "parse_args", return_value=args),
+        patch.object(main.ResultsManager, "create_execution_dir", return_value=str(tmp_path / "results")),
+        patch.object(main, "run_hierarchical_image_pipeline", return_value=record) as run_hierarchy,
+        patch.object(main, "save_summary") as save_summary,
+        patch.object(main.torch.cuda, "is_available", return_value=False),
+    ):
+        main.main()
+
+    run_hierarchy.assert_called_once()
+    summary_path, records = save_summary.call_args.args
+    assert Path(summary_path).name == "summary_resnet_hierarchical.json"
+    assert records == [record]
+
+
+def test_hierarchical_resume_reuses_existing_execution_directory(tmp_path):
+    args = _args(tmp_path)
+    args.model = "resnet"
+    args.hierarchical = True
+    args.img_size = 256
+    args.hierarchy_manifest = str(tmp_path / "manifest.csv")
+    args.hierarchy_min_train_per_class = 10
+    args.hierarchy_confidence_threshold = 0.0
+    args.hierarchy_balance_target = 500
+    args.hierarchy_min_synthetic_fraction = 0.10
+    args.hierarchy_max_synthetic_per_source = 10
+    args.hierarchy_disable_augmentation = False
+    args.hierarchy_resume_execution = str(tmp_path / "existing_results")
+    Path(args.hierarchy_resume_execution).mkdir()
+    record = {"name": "resnet_hierarchical", "metrics": {}}
+
+    with (
+        patch.object(main, "parse_args", return_value=args),
+        patch.object(main.ResultsManager, "create_execution_dir") as create_execution,
+        patch.object(main, "run_hierarchical_image_pipeline", return_value=record) as run_hierarchy,
+        patch.object(main, "save_summary"),
+        patch.object(main.torch.cuda, "is_available", return_value=False),
+    ):
+        main.main()
+
+    create_execution.assert_not_called()
+    assert run_hierarchy.call_args.kwargs["execution_dir"] == str(
+        Path(args.hierarchy_resume_execution)
+    )

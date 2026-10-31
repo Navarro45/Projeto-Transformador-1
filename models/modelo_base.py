@@ -9,7 +9,8 @@ class Modelo_Base(nn.Module):
         self,
         num_classes,
         device,
-        model_name="base_model"
+        model_name="base_model",
+        image_size=256,
     ):
         super().__init__()
 
@@ -18,6 +19,7 @@ class Modelo_Base(nn.Module):
         self.device = device
 
         self.model_name = model_name
+        self.image_size = int(image_size)
 
         self.model = None
 
