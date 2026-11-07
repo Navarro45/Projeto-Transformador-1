@@ -22,11 +22,24 @@ from evaluation.heatmap_runner import (
 
 from models.model_factory import ModelFactory
 
+from hierarchy.execution_import import (
+    build_hierarchy_import_plan,
+    family_import_spec,
+    materialize_hierarchy_import_plan,
+)
 from hierarchy.image_pipeline import run_hierarchical_image_pipeline
 
 from training.trainer import Trainer
 
 from shared.metrics import plot_training_history
+from shared.stellar_hierarchy import (
+    LEVEL2_CLASS_ORDER,
+    OB_SPECTRAL_LABEL,
+    SPECIAL_TYPE_LABEL,
+    SPECIAL_STELLAR_CLASSES,
+    SPECTRAL_CLASS_ORDER,
+    parse_level3_class_weights,
+)
 
 from utils.result_manager import ResultsManager
 
@@ -590,6 +603,33 @@ def parse_args():
     )
 
     parser.add_argument(
+        "--hierarchy-exclude-level2-classes",
+        default="",
+        help=(
+            "Classes removidas do nivel 2, separadas por virgula. "
+            "Exemplo: --hierarchy-exclude-level2-classes III"
+        ),
+    )
+
+    parser.add_argument(
+        "--hierarchy-exclude-spectral-classes",
+        default="",
+        help=(
+            "Classes espectrais removidas do nivel 3, separadas por virgula. "
+            "Exemplo: --hierarchy-exclude-spectral-classes OB"
+        ),
+    )
+
+    parser.add_argument(
+        "--hierarchy-level3-class-weights",
+        default="",
+        help=(
+            "Multiplicadores de peso para classes do nivel 3. "
+            "Exemplo: --hierarchy-level3-class-weights OB=1.5,M=1.2"
+        ),
+    )
+
+    parser.add_argument(
         "--hierarchy-balance-target",
         type=int,
         default=500,
@@ -629,6 +669,18 @@ def parse_args():
         help=(
             "Diretorio Resultados/<data> existente para validar e reutilizar "
             "checkpoints hierarquicos sem retreinar nos concluidos."
+        ),
+    )
+
+    parser.add_argument(
+        "--hierarchy-start-level",
+        type=int,
+        choices=[1, 2, 3],
+        default=1,
+        help=(
+            "Nivel inicial da nova execucao hierarquica. Nos niveis 2 ou 3, "
+            "copia os niveis anteriores da ultima execucao datada e treina "
+            "do zero a partir do nivel escolhido."
         ),
     )
 
@@ -893,28 +945,98 @@ def main():
         )
 
     resume_execution = getattr(args, "hierarchy_resume_execution", None)
+    start_level = int(getattr(args, "hierarchy_start_level", 1))
+    hierarchical = bool(getattr(args, "hierarchical", False))
+    raw_excluded_level2 = getattr(
+        args,
+        "hierarchy_exclude_level2_classes",
+        "",
+    )
+    if isinstance(raw_excluded_level2, str):
+        raw_excluded_level2 = raw_excluded_level2.split(",")
+    special_aliases = {
+        SPECIAL_TYPE_LABEL.upper(),
+        *(label.upper() for label in SPECIAL_STELLAR_CLASSES),
+    }
+    excluded_level2 = set()
+    for value in raw_excluded_level2 or ():
+        text = str(value).strip().upper()
+        if text:
+            excluded_level2.add(
+                SPECIAL_TYPE_LABEL if text in special_aliases else text
+            )
+    level2_order = LEVEL2_CLASS_ORDER
+    invalid_level2 = sorted(excluded_level2.difference(level2_order))
+    if invalid_level2:
+        raise ValueError(
+            "Classes invalidas em --hierarchy-exclude-level2-classes: "
+            + ", ".join(invalid_level2)
+        )
+    args.hierarchy_exclude_level2_classes = tuple(
+        label for label in level2_order if label in excluded_level2
+    )
+    raw_excluded_spectral = getattr(
+        args,
+        "hierarchy_exclude_spectral_classes",
+        "",
+    )
+    if isinstance(raw_excluded_spectral, str):
+        raw_excluded_spectral = raw_excluded_spectral.split(",")
+    excluded_spectral = set()
+    for value in raw_excluded_spectral or ():
+        text = str(value).strip().upper()
+        if text:
+            excluded_spectral.add(
+                OB_SPECTRAL_LABEL if text in {"O", "B", "OB"} else text
+            )
+    invalid_excluded = sorted(excluded_spectral.difference(SPECTRAL_CLASS_ORDER))
+    if invalid_excluded:
+        raise ValueError(
+            "Classes espectrais invalidas em --hierarchy-exclude-spectral-classes: "
+            + ", ".join(invalid_excluded)
+        )
+    args.hierarchy_exclude_spectral_classes = tuple(
+        label for label in SPECTRAL_CLASS_ORDER if label in excluded_spectral
+    )
+    args.hierarchy_level3_class_weights = parse_level3_class_weights(
+        getattr(args, "hierarchy_level3_class_weights", "")
+    )
+    weighted_excluded = sorted(
+        set(args.hierarchy_level3_class_weights).intersection(
+            args.hierarchy_exclude_spectral_classes
+        )
+    )
+    if weighted_excluded:
+        raise ValueError(
+            "Uma classe nao pode ser ponderada e excluida ao mesmo tempo: "
+            + ", ".join(weighted_excluded)
+        )
 
-    if resume_execution and not getattr(args, "hierarchical", False):
+    if resume_execution and not hierarchical:
         raise ValueError(
             "--hierarchy-resume-execution exige --hierarchical"
         )
 
-    if resume_execution:
-        execution_dir = os.path.normpath(str(resume_execution))
-        if not os.path.isdir(execution_dir):
-            raise FileNotFoundError(
-                f"Diretorio de retomada nao encontrado: {execution_dir}"
-            )
-        print(f"Retomando execucao existente: {execution_dir}")
-    else:
-        execution_dir = ResultsManager.create_execution_dir()
-
-    print(f"Diretorio desta execucao: {execution_dir}")
-
-    model_records = []
     model_selector = args.model.lower()
+    if start_level > 1 and not hierarchical:
+        raise ValueError("--hierarchy-start-level 2/3 exige --hierarchical")
+    if args.hierarchy_exclude_spectral_classes and not hierarchical:
+        raise ValueError(
+            "--hierarchy-exclude-spectral-classes exige --hierarchical"
+        )
+    if args.hierarchy_exclude_level2_classes and not hierarchical:
+        raise ValueError("--hierarchy-exclude-level2-classes exige --hierarchical")
+    if args.hierarchy_level3_class_weights and not hierarchical:
+        raise ValueError("--hierarchy-level3-class-weights exige --hierarchical")
+    if start_level > 1 and resume_execution:
+        raise ValueError(
+            "--hierarchy-start-level 2/3 nao pode ser combinado com "
+            "--hierarchy-resume-execution"
+        )
 
-    if getattr(args, "hierarchical", False):
+    hierarchy_models = None
+    hierarchy_import_plan = None
+    if hierarchical:
 
         if args.img_size != 256:
             raise ValueError("A nova hierarquia visual exige --img-size 256")
@@ -945,6 +1067,39 @@ def main():
                 "--model all ou --model all_models"
             )
 
+        if start_level > 1:
+            hierarchy_import_plan = build_hierarchy_import_plan(
+                args=args,
+                model_names=hierarchy_models,
+                runs=args.runs,
+            )
+
+    if resume_execution:
+        execution_dir = os.path.normpath(str(resume_execution))
+        if not os.path.isdir(execution_dir):
+            raise FileNotFoundError(
+                f"Diretorio de retomada nao encontrado: {execution_dir}"
+            )
+        print(f"Retomando execucao existente: {execution_dir}")
+    else:
+        execution_dir = ResultsManager.create_execution_dir()
+
+    if hierarchy_import_plan is not None:
+        hierarchy_import_plan = materialize_hierarchy_import_plan(
+            hierarchy_import_plan,
+            execution_dir,
+        )
+        print(
+            "Niveis anteriores importados de: "
+            f"{hierarchy_import_plan['source_execution']}"
+        )
+
+    print(f"Diretorio desta execucao: {execution_dir}")
+
+    model_records = []
+
+    if hierarchical:
+
         for run_index in range(1, args.runs + 1):
             for model_name in hierarchy_models:
                 model_records.append(
@@ -953,6 +1108,11 @@ def main():
                         model_name=model_name,
                         run_index=run_index,
                         execution_dir=execution_dir,
+                        import_spec=family_import_spec(
+                            hierarchy_import_plan,
+                            model_name,
+                            run_index,
+                        ),
                     )
                 )
                 gc.collect()

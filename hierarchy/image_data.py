@@ -146,11 +146,14 @@ def records_for_node(manifest: pd.DataFrame, node: HierarchyNode, split: str) ->
     if node.level >= 2:
         records = records.loc[records["object_class"].eq("STAR")]
     if node.level == 3:
+        eligible_level2 = (
+            node.eligible_level2_labels or ROMAN_LUMINOSITY_ORDER
+        )
         records = records.loc[
-            records["stellar_level2_label"].isin(ROMAN_LUMINOSITY_ORDER)
+            records["stellar_level2_label"].isin(eligible_level2)
         ]
-    records = records.loc[records[node.target_column].isin(node.classes)].copy()
-    records["target_label"] = records[node.target_column]
+    records["target_label"] = records[node.target_column].map(node.map_target_label)
+    records = records.loc[records["target_label"].isin(node.classes)].copy()
     records["sample_kind"] = "real"
     records["source_object_id"] = records["object_id"]
     return records.reset_index(drop=True)

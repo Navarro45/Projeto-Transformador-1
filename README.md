@@ -421,9 +421,11 @@ python scripts/generate_augmentation_examples.py
 ```
 
 Treinar a ResNet em 256x256. O nivel 1 separa `GALAXY/QSO/STAR`, o nivel 2
-separa luminosidades `III/IV/V` e classes especiais `WD/CARBON/CV`. O nivel 3
-usa um unico classificador da mesma familia para todas as classes espectrais
-elegiveis `O/B/A/F/G/K/M`, reunindo estrelas de todas as luminosidades romanas:
+separa as luminosidades romanas `I/II/III/IV/V` e agrupa qualquer tipo nao
+romano, incluindo `WD/CARBON/CV`, na saida `Special_type`. O nivel 3 usa um
+unico classificador da mesma familia com as saidas espectrais
+`OB/A/F/G/K/M`: os objetos `O` e `B` compartilham a saida `OB`. Os rotulos
+originais continuam preservados no manifesto e nas predicoes para auditoria:
 
 ```bash
 python main.py --model resnet --hierarchical --runs 1
@@ -434,6 +436,22 @@ misturam imagens reais e sinteticas. Classes abundantes usam por padrao 450
 reais e 50 sinteticas; classes menores preservam todas as reais e completam a
 meta dentro do limite de dez sinteticas por objeto. Validacao e teste continuam
 100% reais. Nenhuma imagem e redimensionada para 224.
+
+O nivel 3 aceita multiplicadores explicitos na funcao de perda. Por exemplo,
+para aumentar em 50% o peso relativo dos erros da classe `OB`:
+
+```bash
+python main.py --model resnet --hierarchical --hierarchy-level3-class-weights OB=1.5 --runs 1
+```
+
+Mais de uma classe pode ser configurada com valores separados por virgula,
+como `OB=1.5,M=1.2`. O multiplicador e aplicado depois do peso balanceado e
+nao altera a quantidade de imagens. Os pesos base, multiplicadores e pesos
+finais ficam em `metadata/info.json`. O nivel 3 tambem grava
+`metrics/validation_metrics.json`,
+`metrics/validation_classification_report.json` e
+`predictions/validation_predictions.csv`, permitindo escolher o peso sem usar
+o conjunto de teste.
 
 Para executar todas as familias visuais com a mesma hierarquia:
 
@@ -448,13 +466,70 @@ por nivel e classificador. Cada nivel recebe `metadata/train_manifest.csv` e
 motivo de parada e distancia hierarquica. Uma execucao interrompida pode reutilizar familias e
 checkpoints concluidos indicando a pasta datada existente:
 
+A avaliacao ponta a ponta grava tres arquivos em `hierarchy/metrics/`:
+
+- `end_to_end_metrics.json`: metricas planas usadas pelos resumos automaticos;
+- `metricas_ponta_a_ponta.json`: versao organizada e legivel em portugues;
+- `relatorio_classes_ponta_a_ponta.json`: precisao, revocacao, F1 e suporte por caminho final.
+
+As chaves `accuracy`, `precision`, `recall` e `f1` representam o caminho
+completo ponderado. Nesse criterio, `STAR > V > G` so esta correto quando os
+tres niveis forem previstos corretamente. As metricas `precisao_hierarquica`,
+`revocacao_hierarquica` e `f1_hierarquico` concedem credito parcial pelos
+prefixos corretos do caminho. Por exemplo, prever `STAR > V > K` para um alvo
+`STAR > V > G` acerta dois dos tres niveis. O relatorio tambem separa todos os
+objetos dos alvos suportados pela configuracao atual, evitando confundir uma
+classe deliberadamente excluida com uma falha comum do modelo.
+
+O arquivo `predictions/hierarchical_test_predictions.csv` registra essas
+metricas por objeto, junto de `niveis_corretos`, `profundidade_real` e
+`profundidade_predita`.
+
 ```bash
 python main.py --model all --hierarchical --runs 1 --hierarchy-resume-execution Resultados/2026-10-26_00-39-14_517462
 ```
 
 Na retomada, nos completos sao validados e ignorados, checkpoints sem todos os
 relatorios sao apenas reavaliados e somente nos sem checkpoint sao treinados.
-As decisoes ficam em `metadata/resume_plan.json`.
+Familias completas com uma versao antiga das metricas executam somente a
+avaliacao ponta a ponta e recebem a acao `reevaluate_end_to_end_metrics`, sem
+novo treinamento. As decisoes ficam em `metadata/resume_plan.json`.
+
+Tambem e possivel criar uma nova execucao a partir do nivel 2 ou 3. Nesse modo,
+o projeto localiza a pasta datada mais recente, valida e copia integralmente os
+niveis anteriores para uma nova pasta de resultados. O nivel escolhido e os
+posteriores sao sempre treinados do zero:
+
+```bash
+python main.py --model all --hierarchical --hierarchy-start-level 2 --runs 1
+python main.py --model all --hierarchical --hierarchy-start-level 3 --runs 1
+```
+
+Para comparar o nivel espectral sem a classe agrupada `OB`, inicie uma nova
+execucao no nivel 2 com:
+
+```bash
+python main.py --model all --hierarchical --hierarchy-start-level 2 --hierarchy-exclude-spectral-classes OB --runs 1
+```
+
+Nesse experimento, o nivel 1 e copiado da ultima execucao, enquanto os niveis 2
+e 3 sao treinados do zero. O modelo espectral global passa a usar apenas
+`A/F/G/K/M`, e as estrelas `O` e `B` permanecem no teste como alvos nao
+suportados.
+
+Para retirar `III` do nivel 2 e manter `OB` no modelo espectral global, use:
+
+```bash
+python main.py --model all --hierarchical --hierarchy-start-level 2 --hierarchy-exclude-level2-classes III --runs 1
+```
+
+As estrelas `III` nao participam do treino dos niveis 2 ou 3 e permanecem na
+avaliacao ponta a ponta como alvos nao suportados. O nivel 3 usa
+`OB/A/F/G/K/M` com as luminosidades romanas restantes.
+
+O modo de inicio seletivo nao pode ser combinado com
+`--hierarchy-resume-execution`. A procedencia e a verificacao da copia ficam em
+`metadata/imported_levels.json`; a execucao de origem nunca e alterada.
 
 Parametros relevantes:
 
@@ -475,12 +550,16 @@ Parametros relevantes:
 | `--hierarchical` | Ativa a cascata com luminosidade no nivel 2 e um classificador espectral global no nivel 3 | desativado |
 | `--hierarchy-manifest` | Manifesto romano/espectral sem substituir o manifesto global anterior | `dataset/hierarchy/roman_spectral_manifest.csv` |
 | `--hierarchy-min-train-per-class` | Minimo real para uma classe espectral entrar no classificador global | `10` |
+| `--hierarchy-exclude-level2-classes` | Remove uma classe romana ou a classe agrupada `Special_type` | vazio |
+| `--hierarchy-exclude-spectral-classes` | Remove classes do modelo espectral global, incluindo a classe agrupada `OB` | vazio |
+| `--hierarchy-level3-class-weights` | Multiplicadores da perda no nivel 3, como `OB=1.5,M=1.2` | vazio (`1.0` para todas) |
 | `--hierarchy-balance-target` | Meta maxima real+sintetica por saida | `500` |
 | `--hierarchy-min-synthetic-fraction` | Fracao sintetica minima em classes abundantes | `0.10` |
 | `--hierarchy-max-synthetic-per-source` | Limite sintetico por objeto real e no | `10` |
 | `--hierarchy-disable-augmentation` | Executa baseline somente com imagens reais | desativado |
 | `--hierarchy-confidence-threshold` | Confianca minima para continuar o roteamento | `0.0` |
 | `--hierarchy-resume-execution` | Pasta datada existente para retomada granular | desativado |
+| `--hierarchy-start-level` | Cria nova execucao importando os niveis anteriores da ultima pasta datada | `1` |
 
 ## Treinamento e Validacao
 

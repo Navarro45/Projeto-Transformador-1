@@ -3,6 +3,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import main
+import pytest
 
 
 def _args(tmp_path):
@@ -101,6 +102,7 @@ def test_hierarchical_resnet_uses_dedicated_pipeline(tmp_path):
     args.hierarchy_max_synthetic_per_source = 10
     args.hierarchy_disable_augmentation = False
     args.hierarchy_resume_execution = None
+    args.hierarchy_start_level = 1
     record = {"name": "resnet_hierarchical", "metrics": {}}
 
     with (
@@ -131,6 +133,7 @@ def test_hierarchical_resume_reuses_existing_execution_directory(tmp_path):
     args.hierarchy_max_synthetic_per_source = 10
     args.hierarchy_disable_augmentation = False
     args.hierarchy_resume_execution = str(tmp_path / "existing_results")
+    args.hierarchy_start_level = 1
     Path(args.hierarchy_resume_execution).mkdir()
     record = {"name": "resnet_hierarchical", "metrics": {}}
 
@@ -147,3 +150,89 @@ def test_hierarchical_resume_reuses_existing_execution_directory(tmp_path):
     assert run_hierarchy.call_args.kwargs["execution_dir"] == str(
         Path(args.hierarchy_resume_execution)
     )
+
+
+def test_hierarchical_start_level_resolves_source_before_destination(tmp_path):
+    args = _args(tmp_path)
+    args.model = "resnet"
+    args.hierarchical = True
+    args.img_size = 256
+    args.hierarchy_manifest = str(tmp_path / "manifest.csv")
+    args.hierarchy_min_train_per_class = 10
+    args.hierarchy_confidence_threshold = 0.0
+    args.hierarchy_balance_target = 500
+    args.hierarchy_min_synthetic_fraction = 0.10
+    args.hierarchy_max_synthetic_per_source = 10
+    args.hierarchy_disable_augmentation = False
+    args.hierarchy_resume_execution = None
+    args.hierarchy_start_level = 2
+    destination = str(tmp_path / "new_results")
+    events = []
+    plan = {
+        "source_execution": str(tmp_path / "old_results"),
+        "families": {"resnet:execucao_01": {"nodes": []}},
+    }
+
+    def build_plan(**kwargs):
+        events.append("preflight")
+        return plan
+
+    def create_execution():
+        events.append("create_destination")
+        return destination
+
+    def materialize(import_plan, execution_dir):
+        events.append("copy")
+        import_plan["destination_execution"] = execution_dir
+        return import_plan
+
+    record = {"name": "resnet_hierarchical", "metrics": {}}
+    with (
+        patch.object(main, "parse_args", return_value=args),
+        patch.object(main, "build_hierarchy_import_plan", side_effect=build_plan),
+        patch.object(main.ResultsManager, "create_execution_dir", side_effect=create_execution),
+        patch.object(main, "materialize_hierarchy_import_plan", side_effect=materialize),
+        patch.object(main, "run_hierarchical_image_pipeline", return_value=record) as run_hierarchy,
+        patch.object(main, "save_summary"),
+        patch.object(main.torch.cuda, "is_available", return_value=False),
+    ):
+        main.main()
+
+    assert events == ["preflight", "create_destination", "copy"]
+    assert run_hierarchy.call_args.kwargs["import_spec"] == plan["families"][
+        "resnet:execucao_01"
+    ]
+
+
+def test_hierarchical_start_level_rejects_in_place_resume(tmp_path):
+    args = _args(tmp_path)
+    args.model = "resnet"
+    args.hierarchical = True
+    args.img_size = 256
+    args.hierarchy_resume_execution = str(tmp_path / "existing")
+    args.hierarchy_start_level = 3
+
+    with (
+        patch.object(main, "parse_args", return_value=args),
+        patch.object(main.ResultsManager, "create_execution_dir") as create_execution,
+        pytest.raises(ValueError, match="nao pode ser combinado"),
+    ):
+        main.main()
+
+    create_execution.assert_not_called()
+
+
+def test_level3_class_weight_requires_hierarchical_mode(tmp_path):
+    args = _args(tmp_path)
+    args.model = "resnet"
+    args.hierarchical = False
+    args.hierarchy_level3_class_weights = "OB=1.5"
+
+    with (
+        patch.object(main, "parse_args", return_value=args),
+        patch.object(main.ResultsManager, "create_execution_dir") as create_execution,
+        pytest.raises(ValueError, match="hierarchy-level3-class-weights exige"),
+    ):
+        main.main()
+
+    create_execution.assert_not_called()
