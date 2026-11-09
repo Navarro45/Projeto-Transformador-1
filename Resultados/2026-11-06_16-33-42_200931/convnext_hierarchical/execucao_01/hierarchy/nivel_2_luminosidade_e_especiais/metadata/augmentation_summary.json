@@ -1,0 +1,41 @@
+{
+    "classes": {
+        "III": {
+            "real_images": 57,
+            "synthetic_images": 443,
+            "training_samples": 500,
+            "unique_real_objects": 57,
+            "synthetic_fraction": 0.886,
+            "approved_synthetic_sources": 57,
+            "rejected_synthetic_sources": 0
+        },
+        "IV": {
+            "real_images": 122,
+            "synthetic_images": 378,
+            "training_samples": 500,
+            "unique_real_objects": 122,
+            "synthetic_fraction": 0.756,
+            "approved_synthetic_sources": 122,
+            "rejected_synthetic_sources": 0
+        },
+        "V": {
+            "real_images": 450,
+            "synthetic_images": 50,
+            "training_samples": 500,
+            "unique_real_objects": 450,
+            "synthetic_fraction": 0.1,
+            "approved_synthetic_sources": 450,
+            "rejected_synthetic_sources": 0
+        },
+        "Special_type": {
+            "real_images": 193,
+            "synthetic_images": 307,
+            "training_samples": 500,
+            "unique_real_objects": 193,
+            "synthetic_fraction": 0.614,
+            "approved_synthetic_sources": 192,
+            "rejected_synthetic_sources": 1
+        }
+    },
+    "total_samples": 2000
+}

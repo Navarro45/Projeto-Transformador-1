@@ -1,0 +1,32 @@
+{
+    "classes": {
+        "GALAXY": {
+            "real_images": 6975,
+            "synthetic_images": 0,
+            "training_samples": 6975,
+            "unique_real_objects": 6975,
+            "synthetic_fraction": 0.0,
+            "approved_synthetic_sources": 6975,
+            "rejected_synthetic_sources": 0
+        },
+        "QSO": {
+            "real_images": 6997,
+            "synthetic_images": 0,
+            "training_samples": 6997,
+            "unique_real_objects": 6997,
+            "synthetic_fraction": 0.0,
+            "approved_synthetic_sources": 6997,
+            "rejected_synthetic_sources": 0
+        },
+        "STAR": {
+            "real_images": 11841,
+            "synthetic_images": 0,
+            "training_samples": 11841,
+            "unique_real_objects": 11841,
+            "synthetic_fraction": 0.0,
+            "approved_synthetic_sources": 11841,
+            "rejected_synthetic_sources": 0
+        }
+    },
+    "total_samples": 25813
+}

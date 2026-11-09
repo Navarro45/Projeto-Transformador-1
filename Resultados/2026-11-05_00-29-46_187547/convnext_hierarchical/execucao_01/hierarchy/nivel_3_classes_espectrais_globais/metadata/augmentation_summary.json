@@ -1,0 +1,59 @@
+{
+    "classes": {
+        "OB": {
+            "real_images": 117,
+            "synthetic_images": 383,
+            "training_samples": 500,
+            "unique_real_objects": 117,
+            "synthetic_fraction": 0.766,
+            "approved_synthetic_sources": 117,
+            "rejected_synthetic_sources": 0
+        },
+        "A": {
+            "real_images": 239,
+            "synthetic_images": 261,
+            "training_samples": 500,
+            "unique_real_objects": 239,
+            "synthetic_fraction": 0.522,
+            "approved_synthetic_sources": 239,
+            "rejected_synthetic_sources": 0
+        },
+        "F": {
+            "real_images": 450,
+            "synthetic_images": 50,
+            "training_samples": 500,
+            "unique_real_objects": 450,
+            "synthetic_fraction": 0.1,
+            "approved_synthetic_sources": 450,
+            "rejected_synthetic_sources": 0
+        },
+        "G": {
+            "real_images": 450,
+            "synthetic_images": 50,
+            "training_samples": 500,
+            "unique_real_objects": 450,
+            "synthetic_fraction": 0.1,
+            "approved_synthetic_sources": 450,
+            "rejected_synthetic_sources": 0
+        },
+        "K": {
+            "real_images": 450,
+            "synthetic_images": 50,
+            "training_samples": 500,
+            "unique_real_objects": 450,
+            "synthetic_fraction": 0.1,
+            "approved_synthetic_sources": 450,
+            "rejected_synthetic_sources": 0
+        },
+        "M": {
+            "real_images": 211,
+            "synthetic_images": 289,
+            "training_samples": 500,
+            "unique_real_objects": 211,
+            "synthetic_fraction": 0.578,
+            "approved_synthetic_sources": 211,
+            "rejected_synthetic_sources": 0
+        }
+    },
+    "total_samples": 3000
+}

@@ -17,7 +17,8 @@ class Trainer:
         early_stopping_min_delta=0.0,
         scheduler_patience=2,
         scheduler_factor=0.5,
-        scheduler_min_lr=1e-6
+        scheduler_min_lr=1e-6,
+        class_weights=None,
     ):
 
         self.model = model
@@ -54,7 +55,19 @@ class Trainer:
 
         self.scheduler_min_lr = scheduler_min_lr
 
-        self.criterion = torch.nn.CrossEntropyLoss()
+        weight_tensor = None
+
+        if class_weights is not None:
+
+            weight_tensor = torch.as_tensor(
+                class_weights,
+                dtype=torch.float32,
+                device=self.device,
+            )
+
+        self.criterion = torch.nn.CrossEntropyLoss(
+            weight=weight_tensor
+        )
 
         self.optimizer = torch.optim.Adam(
             self.model.parameters(),

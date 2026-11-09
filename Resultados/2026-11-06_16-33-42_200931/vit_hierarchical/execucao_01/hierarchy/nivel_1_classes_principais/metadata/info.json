@@ -1,0 +1,84 @@
+{
+    "model": "vit",
+    "model_family": "vit",
+    "hierarchy_node": {
+        "key": "root",
+        "level": 1,
+        "parent": null,
+        "target_column": "object_class",
+        "classes": [
+            "GALAXY",
+            "QSO",
+            "STAR"
+        ],
+        "status": "trainable",
+        "train_counts": {
+            "GALAXY": 6975,
+            "QSO": 6997,
+            "STAR": 11841
+        },
+        "reason": "",
+        "class_to_parent": {},
+        "requires_model": true,
+        "is_deterministic": false
+    },
+    "class_names": [
+        "GALAXY",
+        "QSO",
+        "STAR"
+    ],
+    "class_weights": {
+        "GALAXY": 1.2335961768219832,
+        "QSO": 1.2297174979753227,
+        "STAR": 0.7266559693719562
+    },
+    "epochs": 200,
+    "batch_size": 16,
+    "learning_rate": 0.0001,
+    "img_size": 256,
+    "augmentation": {
+        "enabled": false,
+        "balance_target": 500,
+        "min_synthetic_fraction": 0.1,
+        "max_synthetic_per_source": 10,
+        "summary": {
+            "classes": {
+                "GALAXY": {
+                    "real_images": 6975,
+                    "synthetic_images": 0,
+                    "training_samples": 6975,
+                    "unique_real_objects": 6975,
+                    "synthetic_fraction": 0.0,
+                    "approved_synthetic_sources": 6975,
+                    "rejected_synthetic_sources": 0
+                },
+                "QSO": {
+                    "real_images": 6997,
+                    "synthetic_images": 0,
+                    "training_samples": 6997,
+                    "unique_real_objects": 6997,
+                    "synthetic_fraction": 0.0,
+                    "approved_synthetic_sources": 6997,
+                    "rejected_synthetic_sources": 0
+                },
+                "STAR": {
+                    "real_images": 11841,
+                    "synthetic_images": 0,
+                    "training_samples": 11841,
+                    "unique_real_objects": 11841,
+                    "synthetic_fraction": 0.0,
+                    "approved_synthetic_sources": 11841,
+                    "rejected_synthetic_sources": 0
+                }
+            },
+            "total_samples": 25813
+        }
+    },
+    "device": "cuda",
+    "seed": 42,
+    "split_counts": {
+        "train": 25813,
+        "val": 5530,
+        "test": 5535
+    }
+}

@@ -15,14 +15,17 @@ from models.random_forest_modelo import (
     RandomForestModelConfig,
 )
 from shared.pipelines.star_supervised_random_forest import (
+    apply_spectral_label_level,
     build_hierarchy,
     evaluate_probability_outputs,
     extract_spectrum_features,
     hierarchical_distance,
     load_or_build_spectral_features,
+    load_star_supervised_records,
     make_split_manifest,
     normalize_spectral_label,
     rare_class_report,
+    resolve_rf_label_levels,
 )
 from spectral.preprocessing import SpectralPreprocessor, SpectralPreprocessorConfig
 
@@ -70,6 +73,11 @@ def _write_fits(path: Path, phase: float = 0.0) -> None:
 
 
 class StarRandomForestLabelTests(unittest.TestCase):
+    def test_resolve_rf_label_levels(self):
+        self.assertEqual(resolve_rf_label_levels("main"), ["main"])
+        self.assertEqual(resolve_rf_label_levels("subclass"), ["subclass"])
+        self.assertEqual(resolve_rf_label_levels("both"), ["main", "subclass"])
+
     def test_normalize_spectral_labels(self):
         cases = {
             "M3": ("M", "M3"),
@@ -94,6 +102,21 @@ class StarRandomForestLabelTests(unittest.TestCase):
                 (labels["spectral_parent_label"], labels["spectral_leaf_label"]),
                 expected,
             )
+
+    def test_main_label_level_preserves_original_subclass(self):
+        records = pd.DataFrame(
+            [
+                {"spectral_parent_label": "G", "spectral_leaf_label": "G2"},
+                {"spectral_parent_label": "K", "spectral_leaf_label": "K5"},
+            ]
+        )
+
+        grouped = apply_spectral_label_level(records, "main")
+
+        self.assertEqual(grouped["spectral_leaf_label"].tolist(), ["G", "K"])
+        self.assertEqual(grouped["spectral_group_label"].tolist(), ["G", "K"])
+        self.assertEqual(grouped["spectral_subclass_label"].tolist(), ["G2", "K5"])
+        self.assertEqual(grouped["spectral_label_level"].unique().tolist(), ["main"])
 
     def test_hierarchy_distance_uses_common_ancestor(self):
         records = pd.DataFrame(
@@ -186,6 +209,40 @@ class StarRandomForestModelTests(unittest.TestCase):
 
 
 class StarRandomForestDataTests(unittest.TestCase):
+    def test_load_records_relocates_old_dataset_paths(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            dataset_root = Path(tmp) / "dataset"
+            object_dir = dataset_root / "star_objects" / "STAR_000001"
+            target_dir = object_dir / "Target"
+            spectrum_dir = object_dir / "Spectrogram"
+            fits_path = dataset_root / "spectra" / "star" / "s1.fits"
+            target_dir.mkdir(parents=True)
+            spectrum_dir.mkdir(parents=True)
+            fits_path.parent.mkdir(parents=True)
+            fits_path.write_text("placeholder", encoding="utf-8")
+            (target_dir / "target.json").write_text(
+                '{"spectral_subclass_raw": "G2"}',
+                encoding="utf-8",
+            )
+            (spectrum_dir / "metadata.json").write_text(
+                '{"spectrum_path": "Z:/old/TCC/dataset/spectra/star/s1.fits"}',
+                encoding="utf-8",
+            )
+            index_path = dataset_root / "star_objects" / "star_objects_index.csv"
+            pd.DataFrame(
+                [
+                    {
+                        "star_id": "STAR_000001",
+                        "object_dir": "Z:/old/TCC/dataset/star_objects/STAR_000001",
+                    }
+                ]
+            ).to_csv(index_path, index=False)
+
+            records = load_star_supervised_records(index_path)
+
+            self.assertEqual(Path(records.loc[0, "object_dir"]), object_dir.resolve())
+            self.assertEqual(Path(records.loc[0, "spectrum_path"]), fits_path.resolve())
+
     def test_split_manifest_keeps_singleton_classes_in_train(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "split.csv"
@@ -251,6 +308,38 @@ class StarRandomForestDataTests(unittest.TestCase):
             self.assertEqual(metadata1["star_id"].tolist(), metadata2["star_id"].tolist())
             self.assertTrue(failures1.empty)
             self.assertTrue(failures2.empty)
+
+    def test_cached_features_receive_current_grouped_labels(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            fits_path = root / "spectrum.fits"
+            _write_fits(fits_path)
+            records = pd.DataFrame(
+                [
+                    {
+                        "star_id": "STAR_000001",
+                        "objID": "o1",
+                        "specObjID": "sp1",
+                        "spectral_subclass_raw": "G2",
+                        "spectral_parent_label": "G",
+                        "spectral_leaf_label": "G2",
+                        "spectral_subclass_label": "G2",
+                        "spectral_group_label": "G",
+                        "spectral_label_level": "subclass",
+                        "spectrum_path": str(fits_path),
+                    }
+                ]
+            )
+            config = SpectralPreprocessorConfig(spectral_length=16)
+            load_or_build_spectral_features(records, config, root / "cache")
+
+            grouped = apply_spectral_label_level(records, "main")
+            _, metadata, _, cache = load_or_build_spectral_features(grouped, config, root / "cache")
+
+            self.assertTrue(cache["cache_hit"])
+            self.assertEqual(metadata.loc[0, "spectral_leaf_label"], "G")
+            self.assertEqual(metadata.loc[0, "spectral_subclass_label"], "G2")
+            self.assertEqual(metadata.loc[0, "spectral_label_level"], "main")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,109 @@
+{
+    "model": "cnn_shallow",
+    "model_family": "cnn_shallow",
+    "hierarchy_node": {
+        "key": "star_luminosity",
+        "level": 2,
+        "parent": "STAR",
+        "target_column": "stellar_level2_label",
+        "classes": [
+            "III",
+            "IV",
+            "V",
+            "Special_type"
+        ],
+        "status": "trainable",
+        "train_counts": {
+            "III": 57,
+            "IV": 122,
+            "V": 4642,
+            "Special_type": 193
+        },
+        "reason": "",
+        "class_to_parent": {},
+        "requires_model": true,
+        "is_deterministic": false
+    },
+    "class_names": [
+        "III",
+        "IV",
+        "V",
+        "Special_type"
+    ],
+    "class_weights_base": {
+        "III": 1.0,
+        "IV": 1.0,
+        "V": 1.0,
+        "Special_type": 1.0
+    },
+    "class_weight_multipliers": {
+        "III": 1.0,
+        "IV": 1.0,
+        "V": 1.0,
+        "Special_type": 1.0
+    },
+    "class_weights": {
+        "III": 1.0,
+        "IV": 1.0,
+        "V": 1.0,
+        "Special_type": 1.0
+    },
+    "epochs": 200,
+    "batch_size": 16,
+    "learning_rate": 0.0001,
+    "img_size": 256,
+    "augmentation": {
+        "enabled": true,
+        "balance_target": 500,
+        "min_synthetic_fraction": 0.1,
+        "max_synthetic_per_source": 10,
+        "summary": {
+            "classes": {
+                "III": {
+                    "real_images": 57,
+                    "synthetic_images": 443,
+                    "training_samples": 500,
+                    "unique_real_objects": 57,
+                    "synthetic_fraction": 0.886,
+                    "approved_synthetic_sources": 57,
+                    "rejected_synthetic_sources": 0
+                },
+                "IV": {
+                    "real_images": 122,
+                    "synthetic_images": 378,
+                    "training_samples": 500,
+                    "unique_real_objects": 122,
+                    "synthetic_fraction": 0.756,
+                    "approved_synthetic_sources": 122,
+                    "rejected_synthetic_sources": 0
+                },
+                "V": {
+                    "real_images": 450,
+                    "synthetic_images": 50,
+                    "training_samples": 500,
+                    "unique_real_objects": 450,
+                    "synthetic_fraction": 0.1,
+                    "approved_synthetic_sources": 450,
+                    "rejected_synthetic_sources": 0
+                },
+                "Special_type": {
+                    "real_images": 193,
+                    "synthetic_images": 307,
+                    "training_samples": 500,
+                    "unique_real_objects": 193,
+                    "synthetic_fraction": 0.614,
+                    "approved_synthetic_sources": 192,
+                    "rejected_synthetic_sources": 1
+                }
+            },
+            "total_samples": 2000
+        }
+    },
+    "device": "cuda",
+    "seed": 43,
+    "split_counts": {
+        "train": 2000,
+        "val": 1108,
+        "test": 1068
+    }
+}

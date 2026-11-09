@@ -8,13 +8,15 @@ class CNNShallowModel(Modelo_Base):
     def __init__(
         self,
         num_classes,
-        device
+        device,
+        image_size=256,
     ):
 
         super().__init__(
             num_classes,
             device,
-            model_name="cnn_shallow"
+            model_name="cnn_shallow",
+            image_size=image_size,
         )
 
         self.build_model()

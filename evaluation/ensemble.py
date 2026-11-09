@@ -276,6 +276,17 @@ def _write_comparison_decisions(
             writer.writerow(row)
 
 
+def _format_run_dir(run_index):
+
+    try:
+
+        return f"execucao_{int(run_index):02d}"
+
+    except (TypeError, ValueError):
+
+        return f"execucao_{run_index}"
+
+
 def evaluate_ensemble(
     run_records,
     class_names,
@@ -291,14 +302,24 @@ def evaluate_ensemble(
 
         return []
 
-    timestamp = datetime.now().strftime(
-        "%Y-%m-%d_%H-%M-%S_%f"
-    )
+    if os.path.normpath(str(base_output_dir)) == os.path.normpath("Resultados"):
+
+        timestamp = datetime.now().strftime(
+            "%Y-%m-%d_%H-%M-%S_%f"
+        )
+
+        execution_dir = os.path.join(
+            base_output_dir,
+            timestamp
+        )
+
+    else:
+
+        execution_dir = str(base_output_dir)
 
     ensemble_base_dir = os.path.join(
-        base_output_dir,
-        "ensemble",
-        timestamp
+        execution_dir,
+        "ensemble"
     )
 
     os.makedirs(
@@ -377,7 +398,7 @@ def evaluate_ensemble(
 
         run_output_dir = os.path.join(
             ensemble_base_dir,
-            f"run_{run_index}"
+            _format_run_dir(run_index)
         )
 
         for strategy_name, ensemble_pred in strategies.items():

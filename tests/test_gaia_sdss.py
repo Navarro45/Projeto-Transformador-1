@@ -380,9 +380,42 @@ class GaiaSdssDataTests(unittest.TestCase):
             target = json.loads(target_text)
             rgb = json.loads(rgb_path.read_text(encoding="utf-8"))
             self.assertEqual(target["spectral_class_major"], "M")
+            self.assertEqual(target["spectral_parent_label"], "M")
+            self.assertEqual(target["spectral_leaf_label"], "M3")
+            self.assertEqual(index.loc[0, "spectral_parent_label"], "M")
+            self.assertEqual(index.loc[0, "spectral_leaf_label"], "M3")
             self.assertEqual(target["roman_luminosity_class_raw"], "")
             self.assertEqual(target["stellar_evolution_class"], "UNKNOWN")
             self.assertEqual(rgb["image_path"], str(image_path))
+
+    def test_build_star_object_dataset_relocates_old_dataset_paths(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            dataset_root = root / "dataset"
+            image_path = dataset_root / "images" / "star" / "o1.jpg"
+            image_path.parent.mkdir(parents=True, exist_ok=True)
+            image_path.write_text("placeholder", encoding="utf-8")
+
+            old_image_path = Path("Z:/old/TCC/dataset/images/star/o1.jpg")
+            comparison = root / "comparison.csv"
+            pd.DataFrame(
+                [
+                    {
+                        "objID": "o1",
+                        "specObjID": "s1",
+                        "spectralClass": "STAR",
+                        "pipeline_subclass": "G2",
+                        "image_path": str(old_image_path),
+                    }
+                ]
+            ).to_csv(comparison, index=False)
+
+            output = dataset_root / "star_objects"
+            build_star_object_dataset(comparison, output, dataset_root)
+
+            rgb_path = output / "STAR_000001" / "RGB" / "metadata.json"
+            rgb = json.loads(rgb_path.read_text(encoding="utf-8"))
+            self.assertEqual(Path(rgb["image_path"]), image_path.resolve())
 
 
 if __name__ == "__main__":

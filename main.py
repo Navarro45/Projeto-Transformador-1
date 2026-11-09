@@ -22,13 +22,93 @@ from evaluation.heatmap_runner import (
 
 from models.model_factory import ModelFactory
 
+from hierarchy.execution_import import (
+    build_hierarchy_import_plan,
+    family_import_spec,
+    materialize_hierarchy_import_plan,
+)
+from hierarchy.image_pipeline import run_hierarchical_image_pipeline
+
 from training.trainer import Trainer
 
 from shared.metrics import plot_training_history
+from shared.stellar_hierarchy import (
+    LEVEL2_CLASS_ORDER,
+    OB_SPECTRAL_LABEL,
+    SPECIAL_TYPE_LABEL,
+    SPECIAL_STELLAR_CLASSES,
+    SPECTRAL_CLASS_ORDER,
+    parse_level3_class_weights,
+)
 
 from utils.result_manager import ResultsManager
 
 from shared.pipelines.spectral_unsupervised import run_spectral_unsupervised
+from shared.pipelines.star_supervised_random_forest import (
+    resolve_rf_label_levels,
+    run_star_random_forest,
+)
+
+
+def _split_manifest_for_label_level(path, label_level):
+
+    if not path:
+
+        return path
+
+    root, extension = os.path.splitext(str(path))
+
+    return f"{root}_{label_level}{extension}"
+
+
+def _run_star_model_levels(args, model_names, execution_dir):
+
+    requested_level = args.rf_label_level
+    label_levels = resolve_rf_label_levels(requested_level)
+    original_split_manifest = args.rf_split_manifest
+    use_variants = len(label_levels) > 1
+    records = []
+
+    args.results_execution_dir = execution_dir
+
+    try:
+
+        for run_index in range(1, args.runs + 1):
+
+            for model_name in model_names:
+
+                for label_level in label_levels:
+
+                    args.rf_label_level = label_level
+                    args.rf_result_variant = (
+                        label_level
+                        if use_variants
+                        else None
+                    )
+                    args.rf_split_manifest = (
+                        _split_manifest_for_label_level(
+                            original_split_manifest,
+                            label_level,
+                        )
+                        if use_variants
+                        else original_split_manifest
+                    )
+
+                    records.append(
+                        run_star_random_forest(
+                            args,
+                            model_name,
+                            run_index=run_index,
+                        )
+                    )
+
+    finally:
+
+        args.rf_label_level = requested_level
+        args.rf_split_manifest = original_split_manifest
+        args.rf_result_variant = None
+
+    return records
 
 def _optional_limit(value):
 
@@ -73,13 +153,50 @@ def get_class_names(dataset_dir):
     )
 
 
+def validate_image_splits(train_dir, validation_dir, test_dir):
+
+    missing = []
+
+    for split_name, split_dir in (
+        ("train", train_dir),
+        ("val", validation_dir),
+        ("test", test_dir),
+    ):
+
+        if not os.path.isdir(split_dir):
+
+            missing.append(f"{split_name}: diretorio ausente ({split_dir})")
+            continue
+
+        has_files = any(
+            files
+            for _, _, files in os.walk(split_dir)
+        )
+
+        if not has_files:
+
+            missing.append(f"{split_name}: sem imagens ({split_dir})")
+
+    if missing:
+
+        details = "; ".join(missing)
+
+        raise FileNotFoundError(
+            "Os modelos de imagem exigem os splits 70/15/15 preparados. "
+            f"Problemas encontrados: {details}. "
+            "Execute: python scripts/prepare_dataset.py"
+        )
+
+
 def run_pipeline(
 
     model_name,
 
-    train_dir="data/train",
+    train_dir="dataset/train",
 
-    test_dir="data/test",
+    validation_dir="dataset/val",
+
+    test_dir="dataset/test",
 
     batch_size=16,
 
@@ -108,6 +225,8 @@ def run_pipeline(
     seed=42,
 
     run_index=1,
+
+    execution_dir=None,
     ):
 
     set_global_seed(seed)
@@ -128,13 +247,13 @@ def run_pipeline(
 
         train_dir=train_dir,
 
+        validation_dir=validation_dir,
+
         test_dir=test_dir,
 
         img_size=img_size,
 
         batch_size=batch_size,
-
-        validation_split=0.2,
 
         max_train_images=_optional_limit(
             max_train_images
@@ -173,7 +292,9 @@ def run_pipeline(
     # =========================
 
     results = ResultsManager(
-        model_wrapper.model_name
+        model_wrapper.model_name,
+        execution_dir=execution_dir,
+        run_index=run_index,
     )
 
     # =========================
@@ -356,12 +477,17 @@ def parse_args():
 
     parser.add_argument(
         "--train-dir",
-        default="data/train"
+        default="dataset/train"
+    )
+
+    parser.add_argument(
+        "--validation-dir",
+        default="dataset/val"
     )
 
     parser.add_argument(
         "--test-dir",
-        default="data/test"
+        default="dataset/test"
     )
 
     parser.add_argument(
@@ -385,7 +511,7 @@ def parse_args():
     parser.add_argument(
         "--img-size",
         type=int,
-        default=224
+        default=256
     )
 
     parser.add_argument(
@@ -455,6 +581,110 @@ def parse_args():
     )
 
     parser.add_argument(
+        "--hierarchical",
+        action="store_true",
+        help=(
+            "Treina a cascata em 256x256: classe do objeto, luminosidade/especial "
+            "e um unico classificador espectral global no nivel 3."
+        ),
+    )
+
+    parser.add_argument(
+        "--hierarchy-manifest",
+        default="dataset/hierarchy/roman_spectral_manifest.csv",
+        help="Manifesto unico preparado por scripts/prepare_hierarchical_dataset.py.",
+    )
+
+    parser.add_argument(
+        "--hierarchy-min-train-per-class",
+        type=int,
+        default=10,
+        help="Minimo real para uma classe espectral participar do modelo global.",
+    )
+
+    parser.add_argument(
+        "--hierarchy-exclude-level2-classes",
+        default="",
+        help=(
+            "Classes removidas do nivel 2, separadas por virgula. "
+            "Exemplo: --hierarchy-exclude-level2-classes III"
+        ),
+    )
+
+    parser.add_argument(
+        "--hierarchy-exclude-spectral-classes",
+        default="",
+        help=(
+            "Classes espectrais removidas do nivel 3, separadas por virgula. "
+            "Exemplo: --hierarchy-exclude-spectral-classes OB"
+        ),
+    )
+
+    parser.add_argument(
+        "--hierarchy-level3-class-weights",
+        default="",
+        help=(
+            "Multiplicadores de peso para classes do nivel 3. "
+            "Exemplo: --hierarchy-level3-class-weights OB=1.5,M=1.2"
+        ),
+    )
+
+    parser.add_argument(
+        "--hierarchy-balance-target",
+        type=int,
+        default=500,
+        help="Meta maxima de amostras reais+sinteticas por saida dos niveis 2 e 3.",
+    )
+
+    parser.add_argument(
+        "--hierarchy-min-synthetic-fraction",
+        type=float,
+        default=0.10,
+        help="Fracao minima sintetica por classe; 0.10 produz 450 reais + 50 sinteticas.",
+    )
+
+    parser.add_argument(
+        "--hierarchy-max-synthetic-per-source",
+        type=int,
+        default=10,
+        help="Limite de imagens sinteticas derivadas do mesmo objeto real em cada no.",
+    )
+
+    parser.add_argument(
+        "--hierarchy-disable-augmentation",
+        action="store_true",
+        help="Executa o baseline hierarquico somente com imagens reais.",
+    )
+
+    parser.add_argument(
+        "--hierarchy-confidence-threshold",
+        type=float,
+        default=0.0,
+        help="Confianca minima [0,1] para continuar ao proximo nivel.",
+    )
+
+    parser.add_argument(
+        "--hierarchy-resume-execution",
+        default=None,
+        help=(
+            "Diretorio Resultados/<data> existente para validar e reutilizar "
+            "checkpoints hierarquicos sem retreinar nos concluidos."
+        ),
+    )
+
+    parser.add_argument(
+        "--hierarchy-start-level",
+        type=int,
+        choices=[1, 2, 3],
+        default=1,
+        help=(
+            "Nivel inicial da nova execucao hierarquica. Nos niveis 2 ou 3, "
+            "copia os niveis anteriores da ultima execucao datada e treina "
+            "do zero a partir do nivel escolhido."
+        ),
+    )
+
+    parser.add_argument(
         "--spectral-metadata-csv",
         type=str,
         default=None
@@ -464,6 +694,121 @@ def parse_args():
         "--max-spectral-samples",
         type=int,
         default=-1
+    )
+
+    parser.add_argument(
+        "--star-objects-index",
+        type=str,
+        default="dataset/star_objects/star_objects_index.csv"
+    )
+
+    parser.add_argument(
+        "--rf-cache-dir",
+        type=str,
+        default="dataset/star_supervised/cache"
+    )
+
+    parser.add_argument(
+        "--rf-split-manifest",
+        type=str,
+        default=None
+    )
+
+    parser.add_argument(
+        "--rf-label-level",
+        type=str,
+        default="main",
+        choices=["main", "subclass", "both"]
+    )
+
+    parser.add_argument(
+        "--rf-refresh-cache",
+        action="store_true"
+    )
+
+    parser.add_argument(
+        "--rf-refresh-split",
+        action="store_true"
+    )
+
+    parser.add_argument(
+        "--rf-n-estimators",
+        type=int,
+        default=300
+    )
+
+    parser.add_argument(
+        "--rf-criterion",
+        type=str,
+        default="log_loss",
+        choices=["gini", "entropy", "log_loss"]
+    )
+
+    parser.add_argument(
+        "--rf-max-depth",
+        type=str,
+        default=None
+    )
+
+    parser.add_argument(
+        "--rf-min-samples-split",
+        type=int,
+        default=2
+    )
+
+    parser.add_argument(
+        "--rf-min-samples-leaf",
+        type=int,
+        default=1
+    )
+
+    parser.add_argument(
+        "--rf-max-features",
+        type=str,
+        default="sqrt"
+    )
+
+    parser.add_argument(
+        "--rf-bootstrap",
+        action=argparse.BooleanOptionalAction,
+        default=True
+    )
+
+    parser.add_argument(
+        "--rf-class-weight",
+        type=str,
+        default="balanced_subsample"
+    )
+
+    parser.add_argument(
+        "--rf-bootstrap-max-samples",
+        type=str,
+        default=None
+    )
+
+    parser.add_argument(
+        "--rf-n-jobs",
+        type=int,
+        default=-1
+    )
+
+    parser.add_argument(
+        "--rf-prediction-mode",
+        type=str,
+        default="global_probability",
+        choices=["global_probability", "conditional"]
+    )
+
+    parser.add_argument(
+        "--hrf-alpha",
+        type=float,
+        default=0.35
+    )
+
+    parser.add_argument(
+        "--hrf-alpha-grid",
+        type=str,
+        default=""
     )
 
     parser.add_argument(
@@ -599,9 +944,245 @@ def main():
             "--runs deve ser maior ou igual a 1"
         )
 
+    resume_execution = getattr(args, "hierarchy_resume_execution", None)
+    start_level = int(getattr(args, "hierarchy_start_level", 1))
+    hierarchical = bool(getattr(args, "hierarchical", False))
+    raw_excluded_level2 = getattr(
+        args,
+        "hierarchy_exclude_level2_classes",
+        "",
+    )
+    if isinstance(raw_excluded_level2, str):
+        raw_excluded_level2 = raw_excluded_level2.split(",")
+    special_aliases = {
+        SPECIAL_TYPE_LABEL.upper(),
+        *(label.upper() for label in SPECIAL_STELLAR_CLASSES),
+    }
+    excluded_level2 = set()
+    for value in raw_excluded_level2 or ():
+        text = str(value).strip().upper()
+        if text:
+            excluded_level2.add(
+                SPECIAL_TYPE_LABEL if text in special_aliases else text
+            )
+    level2_order = LEVEL2_CLASS_ORDER
+    invalid_level2 = sorted(excluded_level2.difference(level2_order))
+    if invalid_level2:
+        raise ValueError(
+            "Classes invalidas em --hierarchy-exclude-level2-classes: "
+            + ", ".join(invalid_level2)
+        )
+    args.hierarchy_exclude_level2_classes = tuple(
+        label for label in level2_order if label in excluded_level2
+    )
+    raw_excluded_spectral = getattr(
+        args,
+        "hierarchy_exclude_spectral_classes",
+        "",
+    )
+    if isinstance(raw_excluded_spectral, str):
+        raw_excluded_spectral = raw_excluded_spectral.split(",")
+    excluded_spectral = set()
+    for value in raw_excluded_spectral or ():
+        text = str(value).strip().upper()
+        if text:
+            excluded_spectral.add(
+                OB_SPECTRAL_LABEL if text in {"O", "B", "OB"} else text
+            )
+    invalid_excluded = sorted(excluded_spectral.difference(SPECTRAL_CLASS_ORDER))
+    if invalid_excluded:
+        raise ValueError(
+            "Classes espectrais invalidas em --hierarchy-exclude-spectral-classes: "
+            + ", ".join(invalid_excluded)
+        )
+    args.hierarchy_exclude_spectral_classes = tuple(
+        label for label in SPECTRAL_CLASS_ORDER if label in excluded_spectral
+    )
+    args.hierarchy_level3_class_weights = parse_level3_class_weights(
+        getattr(args, "hierarchy_level3_class_weights", "")
+    )
+    weighted_excluded = sorted(
+        set(args.hierarchy_level3_class_weights).intersection(
+            args.hierarchy_exclude_spectral_classes
+        )
+    )
+    if weighted_excluded:
+        raise ValueError(
+            "Uma classe nao pode ser ponderada e excluida ao mesmo tempo: "
+            + ", ".join(weighted_excluded)
+        )
+
+    if resume_execution and not hierarchical:
+        raise ValueError(
+            "--hierarchy-resume-execution exige --hierarchical"
+        )
+
+    model_selector = args.model.lower()
+    if start_level > 1 and not hierarchical:
+        raise ValueError("--hierarchy-start-level 2/3 exige --hierarchical")
+    if args.hierarchy_exclude_spectral_classes and not hierarchical:
+        raise ValueError(
+            "--hierarchy-exclude-spectral-classes exige --hierarchical"
+        )
+    if args.hierarchy_exclude_level2_classes and not hierarchical:
+        raise ValueError("--hierarchy-exclude-level2-classes exige --hierarchical")
+    if args.hierarchy_level3_class_weights and not hierarchical:
+        raise ValueError("--hierarchy-level3-class-weights exige --hierarchical")
+    if start_level > 1 and resume_execution:
+        raise ValueError(
+            "--hierarchy-start-level 2/3 nao pode ser combinado com "
+            "--hierarchy-resume-execution"
+        )
+
+    hierarchy_models = None
+    hierarchy_import_plan = None
+    if hierarchical:
+
+        if args.img_size != 256:
+            raise ValueError("A nova hierarquia visual exige --img-size 256")
+
+        if args.hierarchy_balance_target < 2:
+            raise ValueError("--hierarchy-balance-target deve ser maior ou igual a 2")
+
+        if not 0.0 < args.hierarchy_min_synthetic_fraction < 1.0:
+            raise ValueError(
+                "--hierarchy-min-synthetic-fraction deve estar entre 0 e 1"
+            )
+
+        if args.hierarchy_max_synthetic_per_source < 1:
+            raise ValueError(
+                "--hierarchy-max-synthetic-per-source deve ser maior ou igual a 1"
+            )
+
+        if not 0.0 <= args.hierarchy_confidence_threshold <= 1.0:
+            raise ValueError("--hierarchy-confidence-threshold deve estar entre 0 e 1")
+
+        if model_selector in {"all", "all_models"}:
+            hierarchy_models = unique_models
+        elif model_selector in ModelFactory.MODELS:
+            hierarchy_models = [model_selector]
+        else:
+            raise ValueError(
+                "--hierarchical aceita um modelo de imagem registrado, "
+                "--model all ou --model all_models"
+            )
+
+        if start_level > 1:
+            hierarchy_import_plan = build_hierarchy_import_plan(
+                args=args,
+                model_names=hierarchy_models,
+                runs=args.runs,
+            )
+
+    if resume_execution:
+        execution_dir = os.path.normpath(str(resume_execution))
+        if not os.path.isdir(execution_dir):
+            raise FileNotFoundError(
+                f"Diretorio de retomada nao encontrado: {execution_dir}"
+            )
+        print(f"Retomando execucao existente: {execution_dir}")
+    else:
+        execution_dir = ResultsManager.create_execution_dir()
+
+    if hierarchy_import_plan is not None:
+        hierarchy_import_plan = materialize_hierarchy_import_plan(
+            hierarchy_import_plan,
+            execution_dir,
+        )
+        print(
+            "Niveis anteriores importados de: "
+            f"{hierarchy_import_plan['source_execution']}"
+        )
+
+    print(f"Diretorio desta execucao: {execution_dir}")
+
     model_records = []
 
-    if args.model.lower() == "all":
+    if hierarchical:
+
+        for run_index in range(1, args.runs + 1):
+            for model_name in hierarchy_models:
+                model_records.append(
+                    run_hierarchical_image_pipeline(
+                        args=args,
+                        model_name=model_name,
+                        run_index=run_index,
+                        execution_dir=execution_dir,
+                        import_spec=family_import_spec(
+                            hierarchy_import_plan,
+                            model_name,
+                            run_index,
+                        ),
+                    )
+                )
+                gc.collect()
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
+
+        if model_selector == "all_models":
+            model_records.extend(
+                _run_star_model_levels(
+                    args,
+                    ModelFactory.SKLEARN_MODELS,
+                    execution_dir,
+                )
+            )
+
+        save_summary(
+            os.path.join(execution_dir, f"summary_{model_selector}_hierarchical.json"),
+            model_records,
+        )
+        return
+
+    if model_selector in {
+        "all_star_models",
+        "all_star_random_forests",
+    }:
+
+        model_records = _run_star_model_levels(
+            args,
+            ModelFactory.SKLEARN_MODELS,
+            execution_dir,
+        )
+
+        save_summary(
+            os.path.join(
+                execution_dir,
+                "summary_all_star_models.json"
+            ),
+            model_records
+        )
+
+        return
+
+    if (
+        model_selector not in {"all", "all_models"}
+        and ModelFactory.is_sklearn_model(args.model)
+    ):
+
+        model_records = _run_star_model_levels(
+            args,
+            [args.model],
+            execution_dir,
+        )
+
+        save_summary(
+            os.path.join(
+                execution_dir,
+                f"summary_{args.model}.json"
+            ),
+            model_records
+        )
+
+        return
+
+    if model_selector in {"all", "all_models"}:
+
+        validate_image_splits(
+            args.train_dir,
+            args.validation_dir,
+            args.test_dir,
+        )
 
         for run_index in range(1, args.runs + 1):
 
@@ -623,6 +1204,8 @@ def main():
                         model_name=model_name,
 
                         train_dir=args.train_dir,
+
+                        validation_dir=args.validation_dir,
 
                         test_dir=args.test_dir,
 
@@ -653,6 +1236,8 @@ def main():
                         seed=args.seed + run_index - 1,
 
                         run_index=run_index,
+
+                        execution_dir=execution_dir,
                     )
 
                     model_records.append(record)
@@ -677,15 +1262,30 @@ def main():
 
         ensemble_records = evaluate_ensemble(
             model_records,
-            class_names
+            class_names,
+            base_output_dir=execution_dir,
         )
+
+        all_records = list(model_records)
+        summary_name = "summary_all.json"
+
+        if model_selector == "all_models":
+
+            star_records = _run_star_model_levels(
+                args,
+                ModelFactory.SKLEARN_MODELS,
+                execution_dir,
+            )
+
+            all_records.extend(star_records)
+            summary_name = "summary_all_models.json"
 
         save_summary(
             os.path.join(
-                "Resultados",
-                "summary_all.json"
+                execution_dir,
+                summary_name
             ),
-            model_records,
+            all_records,
             ensemble_records
         )
 
@@ -707,6 +1307,8 @@ def main():
                 model_name=args.model,
 
                 train_dir=args.train_dir,
+
+                validation_dir=args.validation_dir,
 
                 test_dir=args.test_dir,
 
@@ -737,6 +1339,8 @@ def main():
                 seed=args.seed + run_index - 1,
 
                 run_index=run_index,
+
+                execution_dir=execution_dir,
             )
 
             model_records.append(record)
@@ -749,7 +1353,7 @@ def main():
 
         save_summary(
             os.path.join(
-                "Resultados",
+                execution_dir,
                 f"summary_{args.model}.json"
             ),
             model_records

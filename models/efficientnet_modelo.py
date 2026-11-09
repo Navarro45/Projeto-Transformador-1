@@ -8,13 +8,15 @@ class EfficientNetModel(Modelo_Base):
     def __init__(
         self,
         num_classes,
-        device
+        device,
+        image_size=256,
     ):
 
         super().__init__(
             num_classes,
             device,
-            model_name="efficientnet_b0"
+            model_name="efficientnet_b0",
+            image_size=image_size,
         )
 
         self.build_model()

@@ -124,6 +124,65 @@ dataset/gaia_sdss/plots/*.png
 
 A classe `gaia_derived_class` e derivada de `teff_gspphot` quando Gaia fornece temperatura efetiva. Ela deve ser interpretada como uma derivacao fotometrica/astrofisica, nao como uma subclassificacao espectral observacional. O relatorio tambem registra status de match, distancias angulares, candidatos ambiguos, cobertura dos parametros Gaia e possiveis efeitos de movimento proprio elevado.
 
+### Download SDSS Condicionado Ao Gaia
+
+Primeiro gere uma lista de candidatos `STAR` diretamente do SkyServer SDSS DR20:
+
+```bash
+python scripts/query_sdss_dr20_star_candidates.py --target-candidates 50000
+```
+
+Esse comando preenche:
+
+```text
+dataset/gaia_sdss/cache/new_gaia_candidates.csv
+```
+
+Para ampliar a classe `STAR` com novos objetos SDSS sem repetir objetos e sem baixar imagens antes da validacao Gaia, use:
+
+```bash
+python scripts/download_gaia_verified_sdss_stars.py --csv dataset/gaia_sdss/cache/new_gaia_candidates.csv --target-verified 10000
+```
+
+Teste sem baixar arquivos:
+
+```bash
+python scripts/download_gaia_verified_sdss_stars.py --csv dataset/gaia_sdss/cache/new_gaia_candidates.csv --target-verified 10000 --dry-run
+```
+
+Esse fluxo executa a ordem:
+
+```text
+SkyServer SDSS DR20
+  -> CSV SDSS STAR
+  -> remove objetos repetidos no CSV e ja existentes em dataset/
+  -> consulta Gaia DR3 com astrophysical_parameters
+  -> exige spectraltype_esphs, evolstage_flame e lum_flame
+  -> remove source_id Gaia repetido
+  -> baixa JPEG/FITS SDSS apenas dos aprovados
+```
+
+`--target-verified` define quantos objetos novos com Gaia confirmado o script deve procurar antes de parar. `--limit` continua disponivel como teto opcional de candidatos SDSS examinados. Por padrao, objetos sem Gaia confirmado sao removidos dos CSVs finais limpos e nao sao baixados; use `--keep-rejected` apenas quando precisar auditar `rejected_candidates.csv`.
+
+Quando `--target-verified` esta ativo, erros de conexao salvos no cache Gaia sao reconsultados automaticamente. O script tambem faz ate 3 tentativas por consulta Gaia e, se uma consulta em lote falhar, tenta recuperar o lote com consultas individuais. Para conexoes instaveis, reduza o lote:
+
+```bash
+python scripts/download_gaia_verified_sdss_stars.py --csv dataset/gaia_sdss/cache/new_gaia_candidates.csv --target-verified 10000 --no-batch --gaia-query-retries 5 --gaia-retry-sleep 10 --gaia-timeout 60 --dry-run
+```
+
+Saidas principais:
+
+```text
+dataset/gaia_verified_sdss/cache/gaia_ap_matches.csv
+dataset/gaia_verified_sdss/candidate_stars_after_dedup.csv
+dataset/gaia_verified_sdss/verified_gaia_sdss_stars.csv
+dataset/gaia_verified_sdss/download_manifest.csv
+dataset/gaia_verified_sdss/download_results.csv
+dataset/gaia_verified_sdss/summary.json
+```
+
+Com `--keep-rejected`, o arquivo `rejected_candidates.csv` registra o motivo da rejeicao de cada linha, incluindo duplicidade local, duplicidade no CSV, match Gaia ausente/ambiguo e falta das informacoes Gaia exigidas. O manifesto do lote fica em `dataset/gaia_verified_sdss/download_manifest.csv`, separado do manifesto historico `dataset/manifests/download_manifest.csv`.
+
 ### Classe Evolutiva/Fisica Das Estrelas
 
 Para a classe `STAR`, o dataset consolidado tambem cria anotacoes derivadas para apoiar comparacoes mais interpretaveis que a classe romana tradicional. Os campos principais sao:
@@ -245,12 +304,27 @@ Executar o download/preparacao completa a partir do CSV:
 python scripts/download_sdss_dr20_dataset.py --csv MyResult_2026824.csv
 ```
 
-O script `scripts/prepare_dataset.py` permanece disponivel para materializar splits `train/val/test` quando necessario para os modelos de imagem. Ele usa `dataset/` como raiz compartilhada.
+O script `scripts/prepare_dataset.py` materializa os splits de imagens separadamente do treinamento. Ele le `dataset/images`, preserva os arquivos originais e divide cada classe de forma deterministica em 70% treino, 15% validacao e 15% teste. O comando nao inicia nenhum modelo.
 
 Preparar a partir de dados locais:
 
 ```bash
 python scripts/prepare_dataset.py
+```
+
+O progresso da validacao e mostrado por classe. Para ajustar o paralelismo de leitura, use `--validation-workers`.
+
+Por padrao, o script usa hardlinks para evitar duplicar os bytes das imagens. Para criar copias independentes:
+
+```bash
+python scripts/prepare_dataset.py --materialization copy
+```
+
+As atribuicoes e contagens ficam em:
+
+```text
+dataset/manifests/image_split_manifest.csv
+dataset/manifests/image_split_summary.json
 ```
 
 Baixar dados e preparar o dataset:
@@ -264,6 +338,8 @@ Opcionalmente, e possivel informar uma raiz alternativa para o dataset:
 ```bash
 python scripts/prepare_dataset.py --data-root caminho/para/dataset
 ```
+
+O treinamento apenas consome `dataset/train` e `dataset/test`; ele nao executa automaticamente esta preparacao.
 
 As configuracoes padrao do conjunto astronomico ficam em `shared/dataset_defaults.py`, incluindo as classes `star`, `galaxy` e `quasar`.
 
@@ -302,6 +378,19 @@ Executar todos os modelos:
 python main.py --model all
 ```
 
+Executar todos os modelos supervisionados do trabalho, incluindo os seis
+modelos de imagem e os dois Random Forests para classes e subclasses:
+
+```bash
+python main.py --model all_models --rf-label-level both --runs 3
+```
+
+Antes dos modelos de imagem, prepare uma vez os splits 70/15/15:
+
+```bash
+python scripts/prepare_dataset.py
+```
+
 Executar cinco rodadas por modelo:
 
 ```bash
@@ -314,6 +403,134 @@ Executar um treinamento reduzido para teste rapido:
 python main.py --model efficientnet --epochs 2 --max-train-images 200 --max-validation-images 60 --max-test-images 60
 ```
 
+### Classificacao hierarquica com nivel espectral global e data augmentation
+
+O manifesto dos tres niveis e preparado separadamente do treinamento. Ele
+reutiliza os splits e as imagens locais, integra as estrelas Gaia/SDSS ja
+baixadas e rejeita objetos repetidos. O comando nao baixa nem copia imagens:
+
+```bash
+python scripts/prepare_hierarchical_dataset.py
+```
+
+Gerar um painel auditavel com imagem original, mascara, objeto isolado e
+composicao sintetica em fundo preto:
+
+```bash
+python scripts/generate_augmentation_examples.py
+```
+
+Treinar a ResNet em 256x256. O nivel 1 separa `GALAXY/QSO/STAR`, o nivel 2
+separa as luminosidades romanas `I/II/III/IV/V` e agrupa qualquer tipo nao
+romano, incluindo `WD/CARBON/CV`, na saida `Special_type`. O nivel 3 usa um
+unico classificador da mesma familia com as saidas espectrais
+`OB/A/F/G/K/M`: os objetos `O` e `B` compartilham a saida `OB`. Os rotulos
+originais continuam preservados no manifesto e nas predicoes para auditoria:
+
+```bash
+python main.py --model resnet --hierarchical --runs 1
+```
+
+Os niveis 2 e 3 usam ate 500 amostras por saida. Todas as classes treinaveis
+misturam imagens reais e sinteticas. Classes abundantes usam por padrao 450
+reais e 50 sinteticas; classes menores preservam todas as reais e completam a
+meta dentro do limite de dez sinteticas por objeto. Validacao e teste continuam
+100% reais. Nenhuma imagem e redimensionada para 224.
+
+O nivel 3 aceita multiplicadores explicitos na funcao de perda. Por exemplo,
+para aumentar em 50% o peso relativo dos erros da classe `OB`:
+
+```bash
+python main.py --model resnet --hierarchical --hierarchy-level3-class-weights OB=1.5 --runs 1
+```
+
+Mais de uma classe pode ser configurada com valores separados por virgula,
+como `OB=1.5,M=1.2`. O multiplicador e aplicado depois do peso balanceado e
+nao altera a quantidade de imagens. Os pesos base, multiplicadores e pesos
+finais ficam em `metadata/info.json`. O nivel 3 tambem grava
+`metrics/validation_metrics.json`,
+`metrics/validation_classification_report.json` e
+`predictions/validation_predictions.csv`, permitindo escolher o peso sem usar
+o conjunto de teste.
+
+Para executar todas as familias visuais com a mesma hierarquia:
+
+```bash
+python main.py --model all --hierarchical --runs 1
+```
+
+Os artefatos ficam em
+`Resultados/<data>/<familia>_hierarchical/execucao_<n>/hierarchy/`, separados
+por nivel e classificador. Cada nivel recebe `metadata/train_manifest.csv` e
+`metadata/augmentation_summary.json`, alem do caminho completo, confiancas,
+motivo de parada e distancia hierarquica. Uma execucao interrompida pode reutilizar familias e
+checkpoints concluidos indicando a pasta datada existente:
+
+A avaliacao ponta a ponta grava tres arquivos em `hierarchy/metrics/`:
+
+- `end_to_end_metrics.json`: metricas planas usadas pelos resumos automaticos;
+- `metricas_ponta_a_ponta.json`: versao organizada e legivel em portugues;
+- `relatorio_classes_ponta_a_ponta.json`: precisao, revocacao, F1 e suporte por caminho final.
+
+As chaves `accuracy`, `precision`, `recall` e `f1` representam o caminho
+completo ponderado. Nesse criterio, `STAR > V > G` so esta correto quando os
+tres niveis forem previstos corretamente. As metricas `precisao_hierarquica`,
+`revocacao_hierarquica` e `f1_hierarquico` concedem credito parcial pelos
+prefixos corretos do caminho. Por exemplo, prever `STAR > V > K` para um alvo
+`STAR > V > G` acerta dois dos tres niveis. O relatorio tambem separa todos os
+objetos dos alvos suportados pela configuracao atual, evitando confundir uma
+classe deliberadamente excluida com uma falha comum do modelo.
+
+O arquivo `predictions/hierarchical_test_predictions.csv` registra essas
+metricas por objeto, junto de `niveis_corretos`, `profundidade_real` e
+`profundidade_predita`.
+
+```bash
+python main.py --model all --hierarchical --runs 1 --hierarchy-resume-execution Resultados/2026-10-26_00-39-14_517462
+```
+
+Na retomada, nos completos sao validados e ignorados, checkpoints sem todos os
+relatorios sao apenas reavaliados e somente nos sem checkpoint sao treinados.
+Familias completas com uma versao antiga das metricas executam somente a
+avaliacao ponta a ponta e recebem a acao `reevaluate_end_to_end_metrics`, sem
+novo treinamento. As decisoes ficam em `metadata/resume_plan.json`.
+
+Tambem e possivel criar uma nova execucao a partir do nivel 2 ou 3. Nesse modo,
+o projeto localiza a pasta datada mais recente, valida e copia integralmente os
+niveis anteriores para uma nova pasta de resultados. O nivel escolhido e os
+posteriores sao sempre treinados do zero:
+
+```bash
+python main.py --model all --hierarchical --hierarchy-start-level 2 --runs 1
+python main.py --model all --hierarchical --hierarchy-start-level 3 --runs 1
+```
+
+Para comparar o nivel espectral sem a classe agrupada `OB`, inicie uma nova
+execucao no nivel 2 com:
+
+```bash
+python main.py --model all --hierarchical --hierarchy-start-level 2 --hierarchy-exclude-spectral-classes OB --runs 1
+```
+
+Nesse experimento, o nivel 1 e copiado da ultima execucao, enquanto os niveis 2
+e 3 sao treinados do zero. O modelo espectral global passa a usar apenas
+`A/F/G/K/M`, e as estrelas `O` e `B` permanecem no teste como alvos nao
+suportados.
+
+Para retirar `III` do nivel 2 e manter `OB` no modelo espectral global, use:
+
+```bash
+python main.py --model all --hierarchical --hierarchy-start-level 2 --hierarchy-exclude-level2-classes III --runs 1
+```
+
+As estrelas `III` nao participam do treino dos niveis 2 ou 3 e permanecem na
+avaliacao ponta a ponta como alvos nao suportados. O nivel 3 usa
+`OB/A/F/G/K/M` com as luminosidades romanas restantes.
+
+O modo de inicio seletivo nao pode ser combinado com
+`--hierarchy-resume-execution`. A procedencia e a verificacao da copia ficam em
+`metadata/imported_levels.json`; a execucao de origem nunca e alterada.
+
 Parametros relevantes:
 
 | Parametro | Descricao | Padrao |
@@ -321,14 +538,28 @@ Parametros relevantes:
 | `--mode` | Modo de execucao: `train` ou `heatmap` | `train` |
 | `--model` | Modelo a treinar ou `all` | obrigatorio |
 | `--train-dir` | Diretorio de treino ImageFolder; usar a camada ativa em `dataset/train` quando os splits forem materializados | `dataset/train` |
+| `--validation-dir` | Diretorio de validacao ImageFolder preparado separadamente | `dataset/val` |
 | `--test-dir` | Diretorio de teste ImageFolder; usar a camada ativa em `dataset/test` quando os splits forem materializados | `dataset/test` |
 | `--batch-size` | Tamanho do lote | `16` |
 | `--epochs` | Numero maximo de epocas | `200` |
 | `--learning-rate` | Taxa de aprendizado | `1e-4` |
-| `--img-size` | Resolucao de entrada | `224` |
+| `--img-size` | Resolucao de entrada; a hierarquia exige o tamanho original | `256` |
 | `--runs` | Numero de repeticoes experimentais | `1` |
 | `--seed` | Semente inicial | `42` |
 | `--heatmaps-per-model` | Quantidade de heatmaps por modelo apos o treino | `0` |
+| `--hierarchical` | Ativa a cascata com luminosidade no nivel 2 e um classificador espectral global no nivel 3 | desativado |
+| `--hierarchy-manifest` | Manifesto romano/espectral sem substituir o manifesto global anterior | `dataset/hierarchy/roman_spectral_manifest.csv` |
+| `--hierarchy-min-train-per-class` | Minimo real para uma classe espectral entrar no classificador global | `10` |
+| `--hierarchy-exclude-level2-classes` | Remove uma classe romana ou a classe agrupada `Special_type` | vazio |
+| `--hierarchy-exclude-spectral-classes` | Remove classes do modelo espectral global, incluindo a classe agrupada `OB` | vazio |
+| `--hierarchy-level3-class-weights` | Multiplicadores da perda no nivel 3, como `OB=1.5,M=1.2` | vazio (`1.0` para todas) |
+| `--hierarchy-balance-target` | Meta maxima real+sintetica por saida | `500` |
+| `--hierarchy-min-synthetic-fraction` | Fracao sintetica minima em classes abundantes | `0.10` |
+| `--hierarchy-max-synthetic-per-source` | Limite sintetico por objeto real e no | `10` |
+| `--hierarchy-disable-augmentation` | Executa baseline somente com imagens reais | desativado |
+| `--hierarchy-confidence-threshold` | Confianca minima para continuar o roteamento | `0.0` |
+| `--hierarchy-resume-execution` | Pasta datada existente para retomada granular | desativado |
+| `--hierarchy-start-level` | Cria nova execucao importando os niveis anteriores da ultima pasta datada | `1` |
 
 ## Treinamento e Validacao
 
@@ -350,7 +581,14 @@ O treinamento usa:
 
 ## Avaliacao e Resultados
 
-Cada execucao salva seus artefatos em `Resultados/<modelo>/<timestamp>/`, com subpastas para:
+Cada comando de treino cria uma pasta com a data/hora de inicio em `Resultados/<data_inicio>/`.
+Dentro dela, os artefatos ficam separados por modelo e por numero da execucao:
+
+```text
+Resultados/<data_inicio>/<modelo>/execucao_01/
+```
+
+Cada pasta de execucao possui subpastas para:
 
 ```text
 model/        # Pesos do modelo treinado
@@ -358,22 +596,23 @@ metrics/      # Metricas quantitativas
 predictions/  # Predicoes geradas
 gradcam/      # Mapas de calor
 metadata/     # Informacoes da execucao
+reports/      # Relatorios textuais quando o fluxo gerar
 plots/        # Curvas e matrizes de confusao
 ```
 
 Ao executar um modelo individual, o resumo e salvo como:
 
 ```text
-Resultados/summary_<modelo>.json
+Resultados/<data_inicio>/summary_<modelo>.json
 ```
 
 Ao executar todos os modelos, o resumo consolidado e salvo como:
 
 ```text
-Resultados/summary_all.json
+Resultados/<data_inicio>/summary_all.json
 ```
 
-O arquivo `Resultados/summary_all.json` registra execucoes repetidas e metricas agregadas. Na consolidacao atual, os melhores resultados medios de F1 foram:
+O arquivo `summary_all.json` da pasta de data/hora registra execucoes repetidas e metricas agregadas. Na consolidacao atual, os melhores resultados medios de F1 foram:
 
 | Modelo ou Ensemble | Rodadas | Acuracia media | F1 medio |
 | --- | ---: | ---: | ---: |
@@ -494,15 +733,16 @@ Cada execucao salva os artefatos em:
 
 ```text
 Resultados/
-  spectral_unsupervised/
-    <timestamp>/
-      spectral/
-        spectra/
-        embeddings/
-        clusters/
-        plots/
-        models/
-        metadata/
+  <data_inicio>/
+    spectral_unsupervised/
+      execucao_01/
+        spectral/
+          spectra/
+          embeddings/
+          clusters/
+          plots/
+          models/
+          metadata/
 ```
 
 Arquivos principais:
@@ -535,27 +775,41 @@ Esses artefatos sao importantes para documentar a metodologia experimental e sus
 
 ## Hierarchical Random Forest Para Subclasses Estelares
 
-O projeto tambem possui um fluxo supervisionado CPU-first para classificar subclasses estelares usando os espectros SDSS locais de `dataset/star_objects`. O Random Forest e implementado com scikit-learn, mas usa a mesma entrada `main.py` e salva resultados em `Resultados/<modelo>/<timestamp>/`, como os demais experimentos.
+O projeto tambem possui um fluxo supervisionado CPU-first para classificar subclasses estelares usando os espectros SDSS locais de `dataset/star_objects`. O Random Forest e implementado com scikit-learn, mas usa a mesma estrutura de resultados em `Resultados/<data_inicio>/<modelo>/execucao_<numero>/`, como os demais experimentos.
 
 Treinar o modelo hierarquico:
 
 ```bash
-python main.py --model hierarchical_random_forest
+python main.py --model hierarchical_random_forest --rf-label-level main
 ```
 
 Treinar o baseline flat:
 
 ```bash
-python main.py --model flat_random_forest
+python main.py --model flat_random_forest --rf-label-level main
+```
+
+Treinar os dois modelos espectrais na mesma execucao:
+
+```bash
+python main.py --model all_star_models --rf-label-level main
+```
+
+Treinar os dois modelos para classes principais e subclasses em uma unica chamada:
+
+```bash
+python main.py --model all_star_models --rf-label-level both
 ```
 
 Teste rapido:
 
 ```bash
-python main.py --model hierarchical_random_forest --max-spectral-samples 500 --rf-n-estimators 100
+python main.py --model all_star_models --rf-label-level main --max-spectral-samples 500 --rf-n-estimators 100
 ```
 
-O alvo final e a subclasse espectral normalizada. A subclasse SDSS bruta continua preservada nos relatorios para auditoria. Todas as subclasses normalizadas sao mantidas, inclusive raras; o arquivo `metadata/rare_classes.csv` mostra quais classes possuem poucos exemplos.
+O alvo padrao e a classe espectral principal (`O`, `B`, `A`, `F`, `G`, `K`, `M`, `L`, `T`, `WD`, `CV`, `CARBON` ou `OB`). A subclasse SDSS bruta e a subclasse normalizada continuam preservadas nos metadados e nas predicoes para auditoria. Para repetir o experimento antigo com subclasses como `G2`, `K5` e `M3`, use `--rf-label-level subclass`.
+
+`--model all_star_models` executa `flat_random_forest` e `hierarchical_random_forest`. Com `--rf-label-level both`, cada execucao ganha subpastas `main/` e `subclass/`, impedindo que modelos, metricas, relatorios e plots sejam sobrescritos. O comando `--model all` continua reservado aos modelos de imagem que classificam `galaxy`, `quasar` e `star`. Para executar os modelos de imagem e os Random Forests na mesma pasta datada, use `--model all_models`.
 
 O modelo hierarquico usa a estrutura:
 
@@ -570,7 +824,7 @@ As features sao vetores de fluxo espectral gerados dos FITS locais com `astropy`
 Saidas principais:
 
 ```text
-Resultados/hierarchical_random_forest/<timestamp>/
+Resultados/<data_inicio>/hierarchical_random_forest/execucao_01/
   model/model.joblib
   model/flat_baseline.joblib
   metrics/metrics.json

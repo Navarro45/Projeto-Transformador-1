@@ -12,13 +12,15 @@ class VisionMambaModel(Modelo_Base):
         num_classes,
         device,
         variant="mambaout_tiny",
-        pretrained=True
+        pretrained=True,
+        image_size=256,
     ):
 
         super().__init__(
             num_classes,
             device,
-            model_name="vmamba"
+            model_name="vmamba",
+            image_size=image_size,
         )
 
         self.variant = variant
@@ -68,7 +70,7 @@ class VisionMambaModel(Modelo_Base):
         self.model.eval()
 
         with torch.no_grad():
-            dummy = torch.zeros(1, 3, 224, 224)
+            dummy = torch.zeros(1, 3, self.image_size, self.image_size)
             features = self.model(dummy)
 
         if was_training:

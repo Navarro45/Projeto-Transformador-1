@@ -1,0 +1,27 @@
+{
+  "source_execution": "D:\\Faculdade\\TCC\\Resultados\\2026-11-06_01-26-12_249923",
+  "destination_execution": "D:\\Faculdade\\TCC\\Resultados\\2026-11-06_16-33-42_200931",
+  "start_level": 2,
+  "model": "efficientnet",
+  "run_index": 1,
+  "nodes": [
+    {
+      "node": "root",
+      "level": 1,
+      "artifact_name": "nivel_1_classes_principais",
+      "classes": [
+        "GALAXY",
+        "QSO",
+        "STAR"
+      ],
+      "source_results_dir": "D:\\Faculdade\\TCC\\Resultados\\2026-11-06_01-26-12_249923\\efficientnet_hierarchical\\execucao_01\\hierarchy\\nivel_1_classes_principais",
+      "source_checkpoint": "D:\\Faculdade\\TCC\\Resultados\\2026-11-06_01-26-12_249923\\efficientnet_hierarchical\\execucao_01\\hierarchy\\nivel_1_classes_principais\\model\\model.pth",
+      "destination_results_dir": "D:\\Faculdade\\TCC\\Resultados\\2026-11-06_16-33-42_200931\\efficientnet_hierarchical\\execucao_01\\hierarchy\\nivel_1_classes_principais",
+      "destination_checkpoint": "D:\\Faculdade\\TCC\\Resultados\\2026-11-06_16-33-42_200931\\efficientnet_hierarchical\\execucao_01\\hierarchy\\nivel_1_classes_principais\\model\\model.pth",
+      "file_count": 11,
+      "total_bytes": 22480251,
+      "checkpoint_sha256": "b4c375e6e0121033c42d137527ce51884f47a90070ad444680318d00084db063",
+      "resume_action": "copied_prerequisite"
+    }
+  ]
+}

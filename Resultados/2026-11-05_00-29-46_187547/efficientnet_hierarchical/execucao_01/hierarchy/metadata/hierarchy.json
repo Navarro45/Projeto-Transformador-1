@@ -1,0 +1,90 @@
+{
+  "method": "hierarchical_global_spectral",
+  "min_train_per_class": 10,
+  "special_level2_class": "Special_type",
+  "special_level2_source_classes": [
+    "WD",
+    "CARBON",
+    "CV"
+  ],
+  "level2_grouping": "all_non_roman_to_special_type",
+  "level3_grouping": {
+    "OB": [
+      "O",
+      "B"
+    ]
+  },
+  "nodes": [
+    {
+      "key": "root",
+      "level": 1,
+      "parent": null,
+      "target_column": "object_class",
+      "classes": [
+        "GALAXY",
+        "QSO",
+        "STAR"
+      ],
+      "status": "trainable",
+      "train_counts": {
+        "GALAXY": 6975,
+        "QSO": 6997,
+        "STAR": 11841
+      },
+      "reason": "",
+      "class_to_parent": {},
+      "requires_model": true,
+      "is_deterministic": false
+    },
+    {
+      "key": "star_luminosity",
+      "level": 2,
+      "parent": "STAR",
+      "target_column": "stellar_level2_label",
+      "classes": [
+        "III",
+        "IV",
+        "V",
+        "Special_type"
+      ],
+      "status": "trainable",
+      "train_counts": {
+        "III": 57,
+        "IV": 122,
+        "V": 4642,
+        "Special_type": 193
+      },
+      "reason": "",
+      "class_to_parent": {},
+      "requires_model": true,
+      "is_deterministic": false
+    },
+    {
+      "key": "star_spectral",
+      "level": 3,
+      "parent": "STAR",
+      "target_column": "stellar_level3_label",
+      "classes": [
+        "OB",
+        "A",
+        "F",
+        "G",
+        "K",
+        "M"
+      ],
+      "status": "trainable",
+      "train_counts": {
+        "K": 1680,
+        "F": 1564,
+        "G": 1010,
+        "A": 239,
+        "M": 211,
+        "OB": 117
+      },
+      "reason": "",
+      "class_to_parent": {},
+      "requires_model": true,
+      "is_deterministic": false
+    }
+  ]
+}

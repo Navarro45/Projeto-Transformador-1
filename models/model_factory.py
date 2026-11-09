@@ -31,7 +31,8 @@ class ModelFactory:
     def create(
         model_name,
         num_classes,
-        device
+        device,
+        image_size=256,
     ):
 
         if model_name not in (
@@ -45,9 +46,28 @@ class ModelFactory:
         return (
             ModelFactory.MODELS[model_name](
                 num_classes,
-                device
+                device,
+                image_size=image_size,
             )
         )
+
+    @staticmethod
+    def create_for_node(
+        model_name,
+        node_key,
+        num_classes,
+        device,
+        image_size=256,
+    ):
+        """Cria uma instancia independente da familia para um nivel hierarquico."""
+        model = ModelFactory.create(
+            model_name=model_name,
+            num_classes=num_classes,
+            device=device,
+            image_size=image_size,
+        )
+        model.hierarchy_node = str(node_key)
+        return model
 
     @staticmethod
     def is_sklearn_model(model_name):

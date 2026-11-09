@@ -1,0 +1,123 @@
+{
+    "model": "resnet",
+    "model_family": "resnet",
+    "hierarchy_node": {
+        "key": "star_spectral",
+        "level": 3,
+        "parent": "STAR",
+        "target_column": "stellar_level3_label",
+        "classes": [
+            "OB",
+            "A",
+            "F",
+            "G",
+            "K",
+            "M"
+        ],
+        "status": "trainable",
+        "train_counts": {
+            "K": 1680,
+            "F": 1564,
+            "G": 1010,
+            "A": 239,
+            "M": 211,
+            "OB": 117
+        },
+        "reason": "",
+        "class_to_parent": {},
+        "requires_model": true,
+        "is_deterministic": false
+    },
+    "class_names": [
+        "OB",
+        "A",
+        "F",
+        "G",
+        "K",
+        "M"
+    ],
+    "class_weights": {
+        "OB": 1.0,
+        "A": 1.0,
+        "F": 1.0,
+        "G": 1.0,
+        "K": 1.0,
+        "M": 1.0
+    },
+    "epochs": 200,
+    "batch_size": 16,
+    "learning_rate": 0.0001,
+    "img_size": 256,
+    "augmentation": {
+        "enabled": true,
+        "balance_target": 500,
+        "min_synthetic_fraction": 0.1,
+        "max_synthetic_per_source": 10,
+        "summary": {
+            "classes": {
+                "OB": {
+                    "real_images": 117,
+                    "synthetic_images": 383,
+                    "training_samples": 500,
+                    "unique_real_objects": 117,
+                    "synthetic_fraction": 0.766,
+                    "approved_synthetic_sources": 117,
+                    "rejected_synthetic_sources": 0
+                },
+                "A": {
+                    "real_images": 239,
+                    "synthetic_images": 261,
+                    "training_samples": 500,
+                    "unique_real_objects": 239,
+                    "synthetic_fraction": 0.522,
+                    "approved_synthetic_sources": 239,
+                    "rejected_synthetic_sources": 0
+                },
+                "F": {
+                    "real_images": 450,
+                    "synthetic_images": 50,
+                    "training_samples": 500,
+                    "unique_real_objects": 450,
+                    "synthetic_fraction": 0.1,
+                    "approved_synthetic_sources": 450,
+                    "rejected_synthetic_sources": 0
+                },
+                "G": {
+                    "real_images": 450,
+                    "synthetic_images": 50,
+                    "training_samples": 500,
+                    "unique_real_objects": 450,
+                    "synthetic_fraction": 0.1,
+                    "approved_synthetic_sources": 450,
+                    "rejected_synthetic_sources": 0
+                },
+                "K": {
+                    "real_images": 450,
+                    "synthetic_images": 50,
+                    "training_samples": 500,
+                    "unique_real_objects": 450,
+                    "synthetic_fraction": 0.1,
+                    "approved_synthetic_sources": 450,
+                    "rejected_synthetic_sources": 0
+                },
+                "M": {
+                    "real_images": 211,
+                    "synthetic_images": 289,
+                    "training_samples": 500,
+                    "unique_real_objects": 211,
+                    "synthetic_fraction": 0.578,
+                    "approved_synthetic_sources": 211,
+                    "rejected_synthetic_sources": 0
+                }
+            },
+            "total_samples": 3000
+        }
+    },
+    "device": "cuda",
+    "seed": 44,
+    "split_counts": {
+        "train": 3000,
+        "val": 1067,
+        "test": 1030
+    }
+}
