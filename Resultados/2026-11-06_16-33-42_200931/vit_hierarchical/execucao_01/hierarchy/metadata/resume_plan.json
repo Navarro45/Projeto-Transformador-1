@@ -1,0 +1,27 @@
+{
+    "resume_enabled": true,
+    "import_enabled": false,
+    "start_level": 1,
+    "source_execution": null,
+    "execution_dir": "Resultados\\2026-11-06_16-33-42_200931",
+    "model": "vit",
+    "run_index": 1,
+    "level3_class_weight_multipliers": {
+        "OB": 3.0
+    },
+    "nodes": [
+        {
+            "node": "root",
+            "action": "skip_complete"
+        },
+        {
+            "node": "star_luminosity",
+            "action": "train"
+        },
+        {
+            "node": "star_spectral",
+            "action": "train"
+        }
+    ],
+    "family_action": "completed"
+}

@@ -1,0 +1,288 @@
+{
+    "versao_metricas": 2,
+    "todos_os_objetos": {
+        "amostras": 5535,
+        "classes": [
+            "GALAXY",
+            "QSO",
+            "STAR",
+            "STAR > III > G",
+            "STAR > III > K",
+            "STAR > IV > A",
+            "STAR > IV > F",
+            "STAR > IV > G",
+            "STAR > IV > K",
+            "STAR > IV > M",
+            "STAR > IV > OB",
+            "STAR > Special_type",
+            "STAR > V > A",
+            "STAR > V > F",
+            "STAR > V > G",
+            "STAR > V > K",
+            "STAR > V > M",
+            "STAR > V > OB"
+        ],
+        "relatorio": {
+            "GALAXY": {
+                "precisao": 0.919262555626192,
+                "revocacao": 0.9665775401069518,
+                "f1": 0.9423264907135875,
+                "suporte": 1496
+            },
+            "QSO": {
+                "precisao": 0.7893120393120393,
+                "revocacao": 0.8566666666666667,
+                "f1": 0.821611253196931,
+                "suporte": 1500
+            },
+            "STAR": {
+                "precisao": 0.0,
+                "revocacao": 0.0,
+                "f1": 0.0,
+                "suporte": 1471
+            },
+            "STAR > III > G": {
+                "precisao": 0.0,
+                "revocacao": 0.0,
+                "f1": 0.0,
+                "suporte": 1
+            },
+            "STAR > III > K": {
+                "precisao": 0.0,
+                "revocacao": 0.0,
+                "f1": 0.0,
+                "suporte": 5
+            },
+            "STAR > IV > A": {
+                "precisao": 0.0,
+                "revocacao": 0.0,
+                "f1": 0.0,
+                "suporte": 0
+            },
+            "STAR > IV > F": {
+                "precisao": 0.0,
+                "revocacao": 0.0,
+                "f1": 0.0,
+                "suporte": 6
+            },
+            "STAR > IV > G": {
+                "precisao": 0.017857142857142856,
+                "revocacao": 0.1,
+                "f1": 0.030303030303030304,
+                "suporte": 10
+            },
+            "STAR > IV > K": {
+                "precisao": 0.013333333333333334,
+                "revocacao": 0.3333333333333333,
+                "f1": 0.02564102564102564,
+                "suporte": 3
+            },
+            "STAR > IV > M": {
+                "precisao": 0.0,
+                "revocacao": 0.0,
+                "f1": 0.0,
+                "suporte": 0
+            },
+            "STAR > IV > OB": {
+                "precisao": 0.0,
+                "revocacao": 0.0,
+                "f1": 0.0,
+                "suporte": 0
+            },
+            "STAR > Special_type": {
+                "precisao": 0.06097560975609756,
+                "revocacao": 0.2631578947368421,
+                "f1": 0.09900990099009901,
+                "suporte": 38
+            },
+            "STAR > V > A": {
+                "precisao": 0.3389830508474576,
+                "revocacao": 0.8888888888888888,
+                "f1": 0.49079754601226994,
+                "suporte": 45
+            },
+            "STAR > V > F": {
+                "precisao": 0.3958333333333333,
+                "revocacao": 0.7351190476190477,
+                "f1": 0.5145833333333333,
+                "suporte": 336
+            },
+            "STAR > V > G": {
+                "precisao": 0.14245014245014245,
+                "revocacao": 0.24271844660194175,
+                "f1": 0.17953321364452424,
+                "suporte": 206
+            },
+            "STAR > V > K": {
+                "precisao": 0.4087694483734088,
+                "revocacao": 0.8210227272727273,
+                "f1": 0.5457979225684608,
+                "suporte": 352
+            },
+            "STAR > V > M": {
+                "precisao": 0.0821917808219178,
+                "revocacao": 0.34285714285714286,
+                "f1": 0.13259668508287292,
+                "suporte": 35
+            },
+            "STAR > V > OB": {
+                "precisao": 0.05555555555555555,
+                "revocacao": 0.03225806451612903,
+                "f1": 0.04081632653061224,
+                "suporte": 31
+            },
+            "acuracia": 0.6110207768744355,
+            "media_macro": {
+                "precisao": 0.17914022179259,
+                "revocacao": 0.3101444306999817,
+                "f1": 0.21238981822315262,
+                "suporte": 5535
+            },
+            "media_ponderada": {
+                "precisao": 0.5217353629260053,
+                "revocacao": 0.6110207768744355,
+                "f1": 0.5557861662052886,
+                "suporte": 5535
+            }
+        }
+    },
+    "alvos_suportados": {
+        "amostras": 4064,
+        "classes": [
+            "GALAXY",
+            "QSO",
+            "STAR > III > G",
+            "STAR > III > K",
+            "STAR > IV > A",
+            "STAR > IV > F",
+            "STAR > IV > G",
+            "STAR > IV > K",
+            "STAR > IV > M",
+            "STAR > IV > OB",
+            "STAR > Special_type",
+            "STAR > V > A",
+            "STAR > V > F",
+            "STAR > V > G",
+            "STAR > V > K",
+            "STAR > V > M",
+            "STAR > V > OB"
+        ],
+        "relatorio": {
+            "GALAXY": {
+                "precisao": 0.9341085271317829,
+                "revocacao": 0.9665775401069518,
+                "f1": 0.9500657030223391,
+                "suporte": 1496
+            },
+            "QSO": {
+                "precisao": 0.9625468164794008,
+                "revocacao": 0.8566666666666667,
+                "f1": 0.9065255731922398,
+                "suporte": 1500
+            },
+            "STAR > III > G": {
+                "precisao": 0.0,
+                "revocacao": 0.0,
+                "f1": 0.0,
+                "suporte": 1
+            },
+            "STAR > III > K": {
+                "precisao": 0.0,
+                "revocacao": 0.0,
+                "f1": 0.0,
+                "suporte": 5
+            },
+            "STAR > IV > A": {
+                "precisao": 0.0,
+                "revocacao": 0.0,
+                "f1": 0.0,
+                "suporte": 0
+            },
+            "STAR > IV > F": {
+                "precisao": 0.0,
+                "revocacao": 0.0,
+                "f1": 0.0,
+                "suporte": 6
+            },
+            "STAR > IV > G": {
+                "precisao": 0.058823529411764705,
+                "revocacao": 0.1,
+                "f1": 0.07407407407407407,
+                "suporte": 10
+            },
+            "STAR > IV > K": {
+                "precisao": 0.08333333333333333,
+                "revocacao": 0.3333333333333333,
+                "f1": 0.13333333333333333,
+                "suporte": 3
+            },
+            "STAR > IV > M": {
+                "precisao": 0.0,
+                "revocacao": 0.0,
+                "f1": 0.0,
+                "suporte": 0
+            },
+            "STAR > IV > OB": {
+                "precisao": 0.0,
+                "revocacao": 0.0,
+                "f1": 0.0,
+                "suporte": 0
+            },
+            "STAR > Special_type": {
+                "precisao": 0.19230769230769232,
+                "revocacao": 0.2631578947368421,
+                "f1": 0.2222222222222222,
+                "suporte": 38
+            },
+            "STAR > V > A": {
+                "precisao": 0.45454545454545453,
+                "revocacao": 0.8888888888888888,
+                "f1": 0.6015037593984962,
+                "suporte": 45
+            },
+            "STAR > V > F": {
+                "precisao": 0.5839243498817966,
+                "revocacao": 0.7351190476190477,
+                "f1": 0.6508563899868248,
+                "suporte": 336
+            },
+            "STAR > V > G": {
+                "precisao": 0.352112676056338,
+                "revocacao": 0.24271844660194175,
+                "f1": 0.28735632183908044,
+                "suporte": 206
+            },
+            "STAR > V > K": {
+                "precisao": 0.7853260869565217,
+                "revocacao": 0.8210227272727273,
+                "f1": 0.8027777777777778,
+                "suporte": 352
+            },
+            "STAR > V > M": {
+                "precisao": 0.2926829268292683,
+                "revocacao": 0.34285714285714286,
+                "f1": 0.3157894736842105,
+                "suporte": 35
+            },
+            "STAR > V > OB": {
+                "precisao": 0.2,
+                "revocacao": 0.03225806451612903,
+                "f1": 0.05555555555555555,
+                "suporte": 31
+            },
+            "acuracia": 0.8321850393700787,
+            "media_macro": {
+                "precisao": 0.2882183172313737,
+                "revocacao": 0.32838822074115714,
+                "f1": 0.2941211872991855,
+                "suporte": 4064
+            },
+            "media_ponderada": {
+                "precisao": 0.8443551998622572,
+                "revocacao": 0.8321850393700787,
+                "f1": 0.8343935252906661,
+                "suporte": 4064
+            }
+        }
+    }
+}

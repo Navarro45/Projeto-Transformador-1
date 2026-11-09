@@ -1,0 +1,210 @@
+{
+    "name": "convnext_hierarchical",
+    "model_key": "convnext",
+    "strategy": "hierarchical_global_spectral",
+    "modality": "image",
+    "run_index": 1,
+    "seed": 42,
+    "start_level": 2,
+    "source_execution": "D:\\Faculdade\\TCC\\Resultados\\2026-11-04_19-47-55_701740",
+    "results_dir": "Resultados\\2026-11-05_00-29-46_187547\\convnext_hierarchical\\execucao_01\\hierarchy",
+    "metrics_version": 2,
+    "metrics": {
+        "metrics_version": 2,
+        "accuracy": 0.6084914182475158,
+        "precision": 0.5311883507305754,
+        "recall": 0.6084914182475158,
+        "f1": 0.5601440014401825,
+        "acuracia_caminho_completo": 0.6084914182475158,
+        "precisao_caminho_completo_macro": 0.21119391580784497,
+        "revocacao_caminho_completo_macro": 0.35037186456270647,
+        "f1_caminho_completo_macro": 0.23899106831550548,
+        "precisao_caminho_completo_ponderada": 0.5311883507305754,
+        "revocacao_caminho_completo_ponderada": 0.6084914182475158,
+        "f1_caminho_completo_ponderado": 0.5601440014401825,
+        "acuracia_caminho_completo_alvos_suportados": 0.8287401574803149,
+        "precisao_caminho_completo_macro_alvos_suportados": 0.327193982354128,
+        "revocacao_caminho_completo_macro_alvos_suportados": 0.3722701060978757,
+        "f1_caminho_completo_macro_alvos_suportados": 0.32461957678505954,
+        "precisao_caminho_completo_ponderada_alvos_suportados": 0.8618945951186361,
+        "revocacao_caminho_completo_ponderada_alvos_suportados": 0.8287401574803149,
+        "f1_caminho_completo_ponderado_alvos_suportados": 0.8368028998066732,
+        "precisao_hierarquica": 0.6731324803962031,
+        "revocacao_hierarquica": 0.8547098126555744,
+        "f1_hierarquico": 0.7531313131313131,
+        "precisao_hierarquica_media_por_objeto": 0.7355916892502259,
+        "revocacao_hierarquica_media_por_objeto": 0.8610659439927733,
+        "f1_hierarquico_medio_por_objeto": 0.7694007828967179,
+        "precisao_hierarquica_alvos_suportados": 0.8565534750872739,
+        "revocacao_hierarquica_alvos_suportados": 0.8760142810775722,
+        "f1_hierarquico_alvos_suportados": 0.8661745827984596,
+        "precisao_hierarquica_media_por_objeto_alvos_suportados": 0.8958333333333333,
+        "revocacao_hierarquica_media_por_objeto_alvos_suportados": 0.8956692913385826,
+        "f1_hierarquico_medio_por_objeto_alvos_suportados": 0.8957020997375328,
+        "root_accuracy": 0.8908762420957543,
+        "exact_path_accuracy": 0.6084914182475158,
+        "exact_path_accuracy_supported_targets": 0.8287401574803149,
+        "mean_hierarchical_distance": 0.7727190605239386,
+        "full_depth_coverage_all_objects": 0.33875338753387535,
+        "full_depth_coverage_predicted_stars": 0.8216476774758983,
+        "full_depth_coverage_true_stars": 0.7164237888932651,
+        "stopped_low_confidence": 0,
+        "unsupported_target_samples": 1471,
+        "level2_labeled_test_stars": 1068,
+        "test_samples": 5535
+    },
+    "nodes": [
+        {
+            "node": "root",
+            "artifact_name": "nivel_1_classes_principais",
+            "classes": [
+                "GALAXY",
+                "QSO",
+                "STAR"
+            ],
+            "metrics": {
+                "accuracy": 0.8908762420957543,
+                "balanced_accuracy": 0.8982179038490926,
+                "macro_f1": 0.8885880906383338,
+                "weighted_f1": 0.8916713653186602,
+                "samples": 5535
+            },
+            "results_dir": "Resultados\\2026-11-05_00-29-46_187547\\convnext_hierarchical\\execucao_01\\hierarchy\\nivel_1_classes_principais",
+            "checkpoint": "Resultados\\2026-11-05_00-29-46_187547\\convnext_hierarchical\\execucao_01\\hierarchy\\nivel_1_classes_principais\\model\\model.pth",
+            "resume_action": "copied_prerequisite",
+            "source_results_dir": "D:\\Faculdade\\TCC\\Resultados\\2026-11-04_19-47-55_701740\\convnext_hierarchical\\execucao_01\\hierarchy\\nivel_1_classes_principais"
+        },
+        {
+            "node": "star_luminosity",
+            "artifact_name": "nivel_2_luminosidade_e_especiais",
+            "classes": [
+                "III",
+                "IV",
+                "V",
+                "Special_type"
+            ],
+            "metrics": {
+                "accuracy": 0.9438202247191011,
+                "balanced_accuracy": 0.5202998167059439,
+                "macro_f1": 0.4987124490514768,
+                "weighted_f1": 0.9447582174900505,
+                "samples": 1068
+            },
+            "results_dir": "Resultados\\2026-11-05_00-29-46_187547\\convnext_hierarchical\\execucao_01\\hierarchy\\nivel_2_luminosidade_e_especiais",
+            "checkpoint": "Resultados\\2026-11-05_00-29-46_187547\\convnext_hierarchical\\execucao_01\\hierarchy\\nivel_2_luminosidade_e_especiais\\model\\model.pth",
+            "resume_action": "train"
+        },
+        {
+            "node": "star_spectral",
+            "artifact_name": "nivel_3_classes_espectrais_globais",
+            "classes": [
+                "OB",
+                "A",
+                "F",
+                "G",
+                "K",
+                "M"
+            ],
+            "metrics": {
+                "accuracy": 0.6145631067961165,
+                "balanced_accuracy": 0.6038029661968541,
+                "macro_f1": 0.503098298120409,
+                "weighted_f1": 0.626503693124619,
+                "samples": 1030
+            },
+            "results_dir": "Resultados\\2026-11-05_00-29-46_187547\\convnext_hierarchical\\execucao_01\\hierarchy\\nivel_3_classes_espectrais_globais",
+            "checkpoint": "Resultados\\2026-11-05_00-29-46_187547\\convnext_hierarchical\\execucao_01\\hierarchy\\nivel_3_classes_espectrais_globais\\model\\model.pth",
+            "resume_action": "train"
+        }
+    ],
+    "hierarchy": {
+        "method": "hierarchical_global_spectral",
+        "min_train_per_class": 10,
+        "special_level2_class": "Special_type",
+        "special_level2_source_classes": [
+            "WD",
+            "CARBON",
+            "CV"
+        ],
+        "level2_grouping": "all_non_roman_to_special_type",
+        "level3_grouping": {
+            "OB": [
+                "O",
+                "B"
+            ]
+        },
+        "nodes": [
+            {
+                "key": "root",
+                "level": 1,
+                "parent": null,
+                "target_column": "object_class",
+                "classes": [
+                    "GALAXY",
+                    "QSO",
+                    "STAR"
+                ],
+                "status": "trainable",
+                "train_counts": {
+                    "GALAXY": 6975,
+                    "QSO": 6997,
+                    "STAR": 11841
+                },
+                "reason": "",
+                "class_to_parent": {},
+                "requires_model": true,
+                "is_deterministic": false
+            },
+            {
+                "key": "star_luminosity",
+                "level": 2,
+                "parent": "STAR",
+                "target_column": "stellar_level2_label",
+                "classes": [
+                    "III",
+                    "IV",
+                    "V",
+                    "Special_type"
+                ],
+                "status": "trainable",
+                "train_counts": {
+                    "III": 57,
+                    "IV": 122,
+                    "V": 4642,
+                    "Special_type": 193
+                },
+                "reason": "",
+                "class_to_parent": {},
+                "requires_model": true,
+                "is_deterministic": false
+            },
+            {
+                "key": "star_spectral",
+                "level": 3,
+                "parent": "STAR",
+                "target_column": "stellar_level3_label",
+                "classes": [
+                    "OB",
+                    "A",
+                    "F",
+                    "G",
+                    "K",
+                    "M"
+                ],
+                "status": "trainable",
+                "train_counts": {
+                    "K": 1680,
+                    "F": 1564,
+                    "G": 1010,
+                    "A": 239,
+                    "M": 211,
+                    "OB": 117
+                },
+                "reason": "",
+                "class_to_parent": {},
+                "requires_model": true,
+                "is_deterministic": false
+            }
+        ]
+    }
+}

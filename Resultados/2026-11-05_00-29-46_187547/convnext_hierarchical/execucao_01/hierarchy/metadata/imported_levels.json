@@ -1,0 +1,27 @@
+{
+  "source_execution": "D:\\Faculdade\\TCC\\Resultados\\2026-11-04_19-47-55_701740",
+  "destination_execution": "D:\\Faculdade\\TCC\\Resultados\\2026-11-05_00-29-46_187547",
+  "start_level": 2,
+  "model": "convnext",
+  "run_index": 1,
+  "nodes": [
+    {
+      "node": "root",
+      "level": 1,
+      "artifact_name": "nivel_1_classes_principais",
+      "classes": [
+        "GALAXY",
+        "QSO",
+        "STAR"
+      ],
+      "source_results_dir": "D:\\Faculdade\\TCC\\Resultados\\2026-11-04_19-47-55_701740\\convnext_hierarchical\\execucao_01\\hierarchy\\nivel_1_classes_principais",
+      "source_checkpoint": "D:\\Faculdade\\TCC\\Resultados\\2026-11-04_19-47-55_701740\\convnext_hierarchical\\execucao_01\\hierarchy\\nivel_1_classes_principais\\model\\model.pth",
+      "destination_results_dir": "D:\\Faculdade\\TCC\\Resultados\\2026-11-05_00-29-46_187547\\convnext_hierarchical\\execucao_01\\hierarchy\\nivel_1_classes_principais",
+      "destination_checkpoint": "D:\\Faculdade\\TCC\\Resultados\\2026-11-05_00-29-46_187547\\convnext_hierarchical\\execucao_01\\hierarchy\\nivel_1_classes_principais\\model\\model.pth",
+      "file_count": 11,
+      "total_bytes": 117504682,
+      "checkpoint_sha256": "153cf53c22aa109a3b6d4f994c6c69e3b99e68cd3028f1722592de49dd75e99b",
+      "resume_action": "copied_prerequisite"
+    }
+  ]
+}

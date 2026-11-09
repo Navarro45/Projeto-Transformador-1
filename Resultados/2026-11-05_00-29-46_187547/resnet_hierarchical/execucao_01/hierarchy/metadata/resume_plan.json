@@ -1,0 +1,24 @@
+{
+    "resume_enabled": false,
+    "import_enabled": true,
+    "start_level": 2,
+    "source_execution": "D:\\Faculdade\\TCC\\Resultados\\2026-11-04_19-47-55_701740",
+    "execution_dir": "Resultados\\2026-11-05_00-29-46_187547",
+    "model": "resnet",
+    "run_index": 1,
+    "nodes": [
+        {
+            "node": "root",
+            "action": "copied_prerequisite"
+        },
+        {
+            "node": "star_luminosity",
+            "action": "train"
+        },
+        {
+            "node": "star_spectral",
+            "action": "train"
+        }
+    ],
+    "family_action": "completed"
+}
