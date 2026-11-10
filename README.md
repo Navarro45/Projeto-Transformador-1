@@ -62,37 +62,37 @@ O manifesto e usado para recuperar RA/DEC quando o indice espectral nao traz ess
 Executar a integracao Gaia:
 
 ```bash
-python scripts/gaia_sdss_integration.py
+python dataset_scripts/gaia_sdss_integration.py
 ```
 
 Teste pequeno:
 
 ```bash
-python scripts/gaia_sdss_integration.py --limit 20
+python dataset_scripts/gaia_sdss_integration.py --limit 20
 ```
 
 Reconsultar apenas erros anteriores do cache:
 
 ```bash
-python scripts/gaia_sdss_integration.py --retry-errors
+python dataset_scripts/gaia_sdss_integration.py --retry-errors
 ```
 
 Diagnosticar conexao com consultas individuais:
 
 ```bash
-python scripts/gaia_sdss_integration.py --limit 20 --batch-size 1 --no-batch --retry-errors
+python dataset_scripts/gaia_sdss_integration.py --limit 20 --batch-size 1 --no-batch --retry-errors
 ```
 
 Expandir para outras classes, quando necessario:
 
 ```bash
-python scripts/gaia_sdss_integration.py --classes GALAXY QSO STAR
+python dataset_scripts/gaia_sdss_integration.py --classes GALAXY QSO STAR
 ```
 
 Gerar novamente apenas relatorios, sem consultar Gaia:
 
 ```bash
-python scripts/gaia_sdss_integration.py --generate-reports-only
+python dataset_scripts/gaia_sdss_integration.py --generate-reports-only
 ```
 
 Parametros principais:
@@ -129,7 +129,7 @@ A classe `gaia_derived_class` e derivada de `teff_gspphot` quando Gaia fornece t
 Primeiro gere uma lista de candidatos `STAR` diretamente do SkyServer SDSS DR20:
 
 ```bash
-python scripts/query_sdss_dr20_star_candidates.py --target-candidates 50000
+python dataset_scripts/query_sdss_dr20_star_candidates.py --target-candidates 50000
 ```
 
 Esse comando preenche:
@@ -141,13 +141,13 @@ dataset/gaia_sdss/cache/new_gaia_candidates.csv
 Para ampliar a classe `STAR` com novos objetos SDSS sem repetir objetos e sem baixar imagens antes da validacao Gaia, use:
 
 ```bash
-python scripts/download_gaia_verified_sdss_stars.py --csv dataset/gaia_sdss/cache/new_gaia_candidates.csv --target-verified 10000
+python dataset_scripts/download_gaia_verified_sdss_stars.py --csv dataset/gaia_sdss/cache/new_gaia_candidates.csv --target-verified 10000
 ```
 
 Teste sem baixar arquivos:
 
 ```bash
-python scripts/download_gaia_verified_sdss_stars.py --csv dataset/gaia_sdss/cache/new_gaia_candidates.csv --target-verified 10000 --dry-run
+python dataset_scripts/download_gaia_verified_sdss_stars.py --csv dataset/gaia_sdss/cache/new_gaia_candidates.csv --target-verified 10000 --dry-run
 ```
 
 Esse fluxo executa a ordem:
@@ -167,7 +167,7 @@ SkyServer SDSS DR20
 Quando `--target-verified` esta ativo, erros de conexao salvos no cache Gaia sao reconsultados automaticamente. O script tambem faz ate 3 tentativas por consulta Gaia e, se uma consulta em lote falhar, tenta recuperar o lote com consultas individuais. Para conexoes instaveis, reduza o lote:
 
 ```bash
-python scripts/download_gaia_verified_sdss_stars.py --csv dataset/gaia_sdss/cache/new_gaia_candidates.csv --target-verified 10000 --no-batch --gaia-query-retries 5 --gaia-retry-sleep 10 --gaia-timeout 60 --dry-run
+python dataset_scripts/download_gaia_verified_sdss_stars.py --csv dataset/gaia_sdss/cache/new_gaia_candidates.csv --target-verified 10000 --no-batch --gaia-query-retries 5 --gaia-retry-sleep 10 --gaia-timeout 60 --dry-run
 ```
 
 Saidas principais:
@@ -203,13 +203,13 @@ parallax_quality_flag
 Gerar a estrutura por objeto sem duplicar imagens e plots:
 
 ```bash
-python scripts/build_star_object_dataset.py
+python dataset_scripts/build_star_object_dataset.py
 ```
 
 Gerar a estrutura por objeto copiando imagem RGB e plot espectral:
 
 ```bash
-python scripts/build_star_object_dataset.py --copy-assets
+python dataset_scripts/build_star_object_dataset.py --copy-assets
 ```
 
 Saida por objeto:
@@ -253,7 +253,7 @@ O comando `--model all` executa o pipeline para todos os modelos registrados.
 +-- training/                       # Rotina de treinamento
 +-- evaluation/                     # Avaliacao, ensembles e Grad-CAM
 +-- shared/                         # Constantes, metricas e pipelines compartilhados
-+-- scripts/                        # Scripts auxiliares
++-- dataset_scripts/                # Scripts de preparacao e criacao do dataset
 +-- utils/                          # Gerenciamento de resultados
 +-- logs/                           # Registros de execucao
 +-- Resultados/                     # Modelos, metricas, graficos e relatorios gerados
@@ -296,20 +296,20 @@ source .venv/bin/activate
 
 A fonte ativa dos experimentos atuais e `dataset/`. A pasta `legacy/data/` nao deve ser usada para novas execucoes, relatorios ou metricas.
 
-O script `scripts/download_sdss_dr20_dataset.py` materializa o dataset SDSS DR20 local a partir do CSV de entrada, salvando imagens, FITS espectrais, plots, metadados e relatorios em `dataset/`.
+O script `dataset_scripts/download_sdss_dr20_dataset.py` materializa o dataset SDSS DR20 local a partir do CSV de entrada, salvando imagens, FITS espectrais, plots, metadados e relatorios em `dataset/`.
 
 Executar o download/preparacao completa a partir do CSV:
 
 ```bash
-python scripts/download_sdss_dr20_dataset.py --csv MyResult_2026824.csv
+python dataset_scripts/download_sdss_dr20_dataset.py --csv MyResult_2026824.csv
 ```
 
-O script `scripts/prepare_dataset.py` materializa os splits de imagens separadamente do treinamento. Ele le `dataset/images`, preserva os arquivos originais e divide cada classe de forma deterministica em 70% treino, 15% validacao e 15% teste. O comando nao inicia nenhum modelo.
+O script `dataset_scripts/prepare_dataset.py` materializa os splits de imagens separadamente do treinamento. Ele le `dataset/images`, preserva os arquivos originais e divide cada classe de forma deterministica em 70% treino, 15% validacao e 15% teste. O comando nao inicia nenhum modelo.
 
 Preparar a partir de dados locais:
 
 ```bash
-python scripts/prepare_dataset.py
+python dataset_scripts/prepare_dataset.py
 ```
 
 O progresso da validacao e mostrado por classe. Para ajustar o paralelismo de leitura, use `--validation-workers`.
@@ -317,7 +317,7 @@ O progresso da validacao e mostrado por classe. Para ajustar o paralelismo de le
 Por padrao, o script usa hardlinks para evitar duplicar os bytes das imagens. Para criar copias independentes:
 
 ```bash
-python scripts/prepare_dataset.py --materialization copy
+python dataset_scripts/prepare_dataset.py --materialization copy
 ```
 
 As atribuicoes e contagens ficam em:
@@ -330,13 +330,13 @@ dataset/manifests/image_split_summary.json
 Baixar dados e preparar o dataset:
 
 ```bash
-python scripts/prepare_dataset.py --download
+python dataset_scripts/prepare_dataset.py --download
 ```
 
 Opcionalmente, e possivel informar uma raiz alternativa para o dataset:
 
 ```bash
-python scripts/prepare_dataset.py --data-root caminho/para/dataset
+python dataset_scripts/prepare_dataset.py --data-root caminho/para/dataset
 ```
 
 O treinamento apenas consome `dataset/train` e `dataset/test`; ele nao executa automaticamente esta preparacao.
@@ -348,7 +348,7 @@ As configuracoes padrao do conjunto astronomico ficam em `shared/dataset_default
 Para listar todas as subclasses preservadas e tambem as subclasses normalizadas usadas pelos modelos supervisionados de estrelas:
 
 ```bash
-python scripts/generate_processing_subclass_report.py
+python dataset_scripts/generate_processing_subclass_report.py
 ```
 
 Saidas principais:
@@ -388,7 +388,7 @@ python main.py --model all_models --rf-label-level both --runs 3
 Antes dos modelos de imagem, prepare uma vez os splits 70/15/15:
 
 ```bash
-python scripts/prepare_dataset.py
+python dataset_scripts/prepare_dataset.py
 ```
 
 Executar cinco rodadas por modelo:
@@ -410,14 +410,14 @@ reutiliza os splits e as imagens locais, integra as estrelas Gaia/SDSS ja
 baixadas e rejeita objetos repetidos. O comando nao baixa nem copia imagens:
 
 ```bash
-python scripts/prepare_hierarchical_dataset.py
+python dataset_scripts/prepare_hierarchical_dataset.py
 ```
 
 Gerar um painel auditavel com imagem original, mascara, objeto isolado e
 composicao sintetica em fundo preto:
 
 ```bash
-python scripts/generate_augmentation_examples.py
+python dataset_scripts/generate_augmentation_examples.py
 ```
 
 Treinar a ResNet em 256x256. O nivel 1 separa `GALAXY/QSO/STAR`, o nivel 2

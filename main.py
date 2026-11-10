@@ -6,7 +6,7 @@ import random
 
 import torch
 
-from legacy.data.data_module import DataModule
+from training.data_module import DataModule
 
 from evaluation.evaluator import Evaluator
 
@@ -184,7 +184,7 @@ def validate_image_splits(train_dir, validation_dir, test_dir):
         raise FileNotFoundError(
             "Os modelos de imagem exigem os splits 70/15/15 preparados. "
             f"Problemas encontrados: {details}. "
-            "Execute: python scripts/prepare_dataset.py"
+            "Execute: python dataset_scripts/prepare_dataset.py"
         )
 
 
@@ -592,7 +592,7 @@ def parse_args():
     parser.add_argument(
         "--hierarchy-manifest",
         default="dataset/hierarchy/roman_spectral_manifest.csv",
-        help="Manifesto unico preparado por scripts/prepare_hierarchical_dataset.py.",
+        help="Manifesto unico preparado por dataset_scripts/prepare_hierarchical_dataset.py.",
     )
 
     parser.add_argument(
