@@ -2,7 +2,7 @@ from pathlib import Path
 
 from PIL import Image
 
-from legacy.data.data_module import DataModule
+from training.data_module import DataModule
 
 
 def _create_split(root: Path, split: str, count: int) -> None:

@@ -111,7 +111,7 @@ def load_hierarchy_manifest(path: str | Path) -> pd.DataFrame:
     if not path.is_file():
         raise FileNotFoundError(
             f"Manifesto hierarquico nao encontrado: {path}. Execute: "
-            "python scripts/prepare_hierarchical_dataset.py"
+            "python dataset_scripts/prepare_hierarchical_dataset.py"
         )
     manifest = pd.read_csv(path, dtype=str).fillna("")
     required = {
